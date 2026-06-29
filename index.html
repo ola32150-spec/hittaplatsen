@@ -20,11 +20,15 @@ body {
   background: rgba(0,0,0,0.3);
 }
 
+#karta {
+  position: relative;
+}
 #karta img {
   width: 100%;
   border-radius: 10px;
 }
 
+/* ✅ RÖDA RINGAR */
 .plats {
   position: absolute;
   width: 28px;
@@ -53,9 +57,6 @@ button {
   margin: 10px;
   border-radius: 12px;
 }
-
-.larareUI { display: block; }
-.elev .larareUI { display: none; }
 </style>
 </head>
 
@@ -68,49 +69,38 @@ button {
 
 <h2>Kartjakten</h2>
 
-<!-- LÄRARDEL -->
-<div class="larareUI">
+<input type="file" id="kartInput">
 
-  <input type="file" id="kartInput">
+<button onclick="setMode('edit')">Redigera</button>
+<button onclick="setMode('play')">Spela</button>
 
-  <button onclick="setMode('edit')">Redigera</button>
-  <button onclick="setMode('play')">Spela</button>
-
-  <input id="banNamn" placeholder="Banans namn">
-  <button onclick="sparaMedNamn()">💾 Spara bana</button>
-
-  <select id="banLista"></select>
-  <button onclick="laddaVald()">📂 Ladda bana</button>
-
-  <button onclick="skapaQR()">📱 Visa QR‑kod</button>
-
+<div id="karta">
+  <img id="bild">
 </div>
 
-<!-- QR -->
-<div id="qrBox">
-  <h3>QR‑kod</h3>
-  <img id="qrBild">
-</div>
-
-<!-- KARTA -->
-<div id="karta"><img id="bild"></div>
-
-<!-- EDITOR -->
+<!-- ✅ NY RÄTT EDITOR -->
 <div id="editor">
-  <input id="fragaInput" placeholder="Fråga"><br>
-  <input type="file" id="bildInput"><br>
-  <input id="svarInput" placeholder="Svar"><br>
-  <button onclick="spara()">Spara kontroll</button>
+  <h3>Ny kontroll</h3>
+
+  <p><b>1. Lägg till bild</b></p>
+  <input type="file" id="bildInput"><br><br>
+
+  <p><b>2. Skriv fråga</b></p>
+  <input id="fragaInput" placeholder="Fråga"><br><br>
+
+  <p><b>3. Skriv svar</b></p>
+  <input id="svarInput" placeholder="Svar"><br><br>
+
+  <button onclick="spara()">✅ Spara kontroll</button>
 </div>
 
-<!-- SCAN -->
+<!-- SPEL -->
 <div id="scan">
   <h3>Hitta platsen</h3>
   <img id="referens"><br>
   <button onclick="klarScan()">Jag är här</button>
 </div>
 
-<!-- FRÅGA -->
 <div id="fragaRuta">
   <h3 id="fragaText"></h3>
   <input id="svarElever">
@@ -121,31 +111,7 @@ button {
 <script>
 let bana=[], mode="none";
 let steg=0, poang=0, tid=0, timer=null;
-let tempX, tempY;
-
-/* AUTO QR / ELEVLÄGE */
-window.onload=function(){
-
-  let params=new URLSearchParams(window.location.search);
-  let data=params.get("bana");
-
-  if(data){
-    bana=JSON.parse(decodeURIComponent(data));
-    document.body.classList.add("elev");
-
-    bana.forEach(k=>{
-      let p=document.createElement("div");
-      p.className="plats";
-      p.style.top=k.top+"px";
-      p.style.left=k.left+"px";
-      karta.appendChild(p);
-    });
-
-    setTimeout(startSpel,500);
-  }
-
-  uppdateraLista();
-};
+let tempX=0,tempY=0;
 
 /* LADDA KARTA */
 kartInput.onchange=e=>{
@@ -154,49 +120,77 @@ kartInput.onchange=e=>{
   r.readAsDataURL(e.target.files[0]);
 };
 
-/* KLICK */
-karta.onclick=e=>{
-  if(mode!=="edit") return;
+/* ✅ STABIL KLICK – SKAPAR RING DIREKT */
+document.getElementById("karta").addEventListener("click", function(e){
 
-  let rect=bild.getBoundingClientRect();
-  tempX=e.clientX-rect.left;
-  tempY=e.clientY-rect.top;
+  if(mode !== "edit"){
+    alert("Klicka på 'Redigera' först");
+    return;
+  }
 
-  editor.style.display="block";
-};
+  let rect = document.getElementById("bild").getBoundingClientRect();
 
-/* MODE */
+  tempX = e.clientX - rect.left;
+  tempY = e.clientY - rect.top;
+
+  // ✅ skapa ring direkt
+  let p = document.createElement("div");
+  p.className = "plats";
+  p.style.top = tempY + "px";
+  p.style.left = tempX + "px";
+
+  document.getElementById("karta").appendChild(p);
+
+  document.getElementById("editor").style.display="block";
+
+}, true);
+
+/* LÄGE */
 function setMode(m){
   mode=m;
   if(m==="play") startSpel();
 }
 
-/* SPARA */
+/* ✅ SÄKER SPARA */
 function spara(){
 
+  if(!bildInput.files[0]){
+    alert("Lägg till bild först!");
+    return;
+  }
+
+  if(!fragaInput.value){
+    alert("Skriv fråga!");
+    return;
+  }
+
+  if(!svarInput.value){
+    alert("Skriv svar!");
+    return;
+  }
+
   let obj={
-    top:tempY,left:tempX,
+    top:tempY,
+    left:tempX,
     fraga:fragaInput.value,
     svar:svarInput.value,
     bild:null
   };
 
-  let f=bildInput.files[0];
-  if(f){
-    let r=new FileReader();
-    r.onload=e=>obj.bild=e.target.result;
-    r.readAsDataURL(f);
-  }
+  let reader=new FileReader();
 
-  bana.push(obj);
+  reader.onload=e=>{
+    obj.bild=e.target.result;
+    bana.push(obj);
+  };
 
-  let p=document.createElement("div");
-  p.className="plats";
-  p.style.top=tempY+"px";
-  p.style.left=tempX+"px";
-  karta.appendChild(p);
+  reader.readAsDataURL(bildInput.files[0]);
 
   editor.style.display="none";
+
+  fragaInput.value="";
+  svarInput.value="";
+  bildInput.value="";
 }
 
 /* SPEL */
@@ -205,7 +199,7 @@ function startSpel(){
 
   timer=setInterval(()=>{
     tid++;
-    document.getElementById("tid").innerText=tid;
+    tidEl.innerText=tid;
   },1000);
 
   visaKarta();
@@ -226,66 +220,19 @@ function klarScan(){
 function kolla(){
   if(svarElever.value.toLowerCase()===bana[steg].svar.toLowerCase()){
     poang++;
-    document.getElementById("poang").innerText=poang;
+    poangEl.innerText=poang;
 
     steg++;
 
-    if(steg<bana.length){visaKarta();}
-    else{
+    if(steg<bana.length){
+      visaKarta();
+    } else {
       clearInterval(timer);
-      alert("🎉 Klar! Tid: "+tid+" sek");
+      alert("Klar! Tid: "+tid);
     }
   } else {
     feedback.innerText="Fel";
   }
-}
-
-/* QR */
-function skapaQR(){
-  let data=encodeURIComponent(JSON.stringify(bana));
-  let url=location.origin+location.pathname+"?bana="+data;
-  let qr="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data="+url;
-
-  qrBild.src=qr;
-  qrBox.style.display="block";
-}
-
-/* SPARA BANOR */
-function sparaMedNamn(){
-  let namn=banNamn.value;
-  let alla=JSON.parse(localStorage.getItem("banor")||"{}");
-
-  alla[namn]=bana;
-  localStorage.setItem("banor",JSON.stringify(alla));
-
-  uppdateraLista();
-}
-
-/* LISTA */
-function uppdateraLista(){
-  banLista.innerHTML="";
-  let alla=JSON.parse(localStorage.getItem("banor")||"{}");
-
-  Object.keys(alla).forEach(n=>{
-    let o=document.createElement("option");
-    o.value=n; o.innerText=n;
-    banLista.appendChild(o);
-  });
-}
-
-function laddaVald(){
-  let alla=JSON.parse(localStorage.getItem("banor")||"{}");
-  bana=alla[banLista.value];
-
-  document.querySelectorAll(".plats").forEach(p=>p.remove());
-
-  bana.forEach(k=>{
-    let p=document.createElement("div");
-    p.className="plats";
-    p.style.top=k.top+"px";
-    p.style.left=k.left+"px";
-    karta.appendChild(p);
-  });
 }
 </script>
 
