@@ -28,7 +28,7 @@ body {
   border-radius: 10px;
 }
 
-/* ✅ RÖDA RINGAR */
+/* RINGAR */
 .plats {
   position: absolute;
   width: 28px;
@@ -49,13 +49,18 @@ button {
   color: white;
 }
 
-#editor, #scan, #fragaRuta, #qrBox {
+#editor, #scan, #fragaRuta {
   display: none;
   background: white;
   color: black;
   padding: 15px;
   margin: 10px;
   border-radius: 12px;
+}
+
+video {
+  width: 100%;
+  border-radius: 10px;
 }
 </style>
 </head>
@@ -78,7 +83,7 @@ button {
   <img id="bild">
 </div>
 
-<!-- ✅ NY RÄTT EDITOR -->
+<!-- EDITOR -->
 <div id="editor">
   <h3>Ny kontroll</h3>
 
@@ -86,21 +91,27 @@ button {
   <input type="file" id="bildInput"><br><br>
 
   <p><b>2. Skriv fråga</b></p>
-  <input id="fragaInput" placeholder="Fråga"><br><br>
+  <input id="fragaInput"><br><br>
 
   <p><b>3. Skriv svar</b></p>
-  <input id="svarInput" placeholder="Svar"><br><br>
+  <input id="svarInput"><br><br>
 
-  <button onclick="spara()">✅ Spara kontroll</button>
+  <button onclick="spara()">Spara</button>
 </div>
 
-<!-- SPEL -->
+<!-- SCAN MED KAMERA -->
 <div id="scan">
-  <h3>Hitta platsen</h3>
-  <img id="referens"><br>
-  <button onclick="klarScan()">Jag är här</button>
+  <h3>📸 Hitta platsen</h3>
+
+  <img id="referens" width="100%"><br><br>
+
+  <video id="video" autoplay></video><br>
+
+  <button onclick="startCamera()">Start kamera</button>
+  <button onclick="klarScan()">Scanna</button>
 </div>
 
+<!-- FRÅGA -->
 <div id="fragaRuta">
   <h3 id="fragaText"></h3>
   <input id="svarElever">
@@ -120,28 +131,26 @@ kartInput.onchange=e=>{
   r.readAsDataURL(e.target.files[0]);
 };
 
-/* ✅ STABIL KLICK – SKAPAR RING DIREKT */
+/* KLICK → SKAPA RING */
 document.getElementById("karta").addEventListener("click", function(e){
 
-  if(mode !== "edit"){
-    alert("Klicka på 'Redigera' först");
+  if(mode !== "edit") {
+    alert("Tryck på Redigera först");
     return;
   }
 
-  let rect = document.getElementById("bild").getBoundingClientRect();
-
+  let rect = bild.getBoundingClientRect();
   tempX = e.clientX - rect.left;
   tempY = e.clientY - rect.top;
 
-  // ✅ skapa ring direkt
-  let p = document.createElement("div");
-  p.className = "plats";
-  p.style.top = tempY + "px";
-  p.style.left = tempX + "px";
+  let p=document.createElement("div");
+  p.className="plats";
+  p.style.top=tempY+"px";
+  p.style.left=tempX+"px";
 
-  document.getElementById("karta").appendChild(p);
+  karta.appendChild(p);
 
-  document.getElementById("editor").style.display="block";
+  editor.style.display="block";
 
 }, true);
 
@@ -151,21 +160,11 @@ function setMode(m){
   if(m==="play") startSpel();
 }
 
-/* ✅ SÄKER SPARA */
+/* SPARA */
 function spara(){
 
   if(!bildInput.files[0]){
-    alert("Lägg till bild först!");
-    return;
-  }
-
-  if(!fragaInput.value){
-    alert("Skriv fråga!");
-    return;
-  }
-
-  if(!svarInput.value){
-    alert("Skriv svar!");
+    alert("Lägg till bild!");
     return;
   }
 
@@ -187,7 +186,6 @@ function spara(){
   reader.readAsDataURL(bildInput.files[0]);
 
   editor.style.display="none";
-
   fragaInput.value="";
   svarInput.value="";
   bildInput.value="";
@@ -195,11 +193,11 @@ function spara(){
 
 /* SPEL */
 function startSpel(){
-  steg=0;poang=0;tid=0;
+  steg=0; poang=0; tid=0;
 
   timer=setInterval(()=>{
     tid++;
-    tidEl.innerText=tid;
+    document.getElementById("tid").innerText=tid;
   },1000);
 
   visaKarta();
@@ -210,17 +208,72 @@ function visaKarta(){
   scan.style.display="block";
 }
 
+/* KAMERA */
+function startCamera(){
+  navigator.mediaDevices.getUserMedia({video:true})
+    .then(s=>video.srcObject=s);
+}
+
+/* ✅ BILDJÄMFÖRELSE */
 function klarScan(){
-  scan.style.display="none";
-  fragaRuta.style.display="block";
-  fragaText.innerText=bana[steg].fraga;
+
+  if(!video.srcObject){
+    alert("Starta kameran först!");
+    return;
+  }
+
+  let canvas=document.createElement("canvas");
+  let ctx=canvas.getContext("2d");
+
+  canvas.width=100;
+  canvas.height=100;
+
+  ctx.drawImage(video,0,0,100,100);
+  let elevData=ctx.getImageData(0,0,100,100).data;
+
+  let img=new Image();
+  img.src=referens.src;
+
+  img.onload=function(){
+
+    let canvas2=document.createElement("canvas");
+    let ctx2=canvas2.getContext("2d");
+
+    canvas2.width=100;
+    canvas2.height=100;
+
+    ctx2.drawImage(img,0,0,100,100);
+    let refData=ctx2.getImageData(0,0,100,100).data;
+
+    let diff=0;
+
+    for(let i=0;i<elevData.length;i+=4){
+      diff += Math.abs(elevData[i]-refData[i]);
+      diff += Math.abs(elevData[i+1]-refData[i+1]);
+      diff += Math.abs(elevData[i+2]-refData[i+2]);
+    }
+
+    let max = 100*100*255*3;
+    let procent = Math.round((1 - diff/max)*100);
+
+    if(procent > 65){
+      alert("✅ Rätt! ("+procent+"%)");
+
+      scan.style.display="none";
+      fragaRuta.style.display="block";
+      fragaText.innerText=bana[steg].fraga;
+
+    } else {
+      alert("❌ För låg match ("+procent+"%)");
+    }
+  };
 }
 
 /* SVAR */
 function kolla(){
   if(svarElever.value.toLowerCase()===bana[steg].svar.toLowerCase()){
     poang++;
-    poangEl.innerText=poang;
+    document.getElementById("poang").innerText=poang;
 
     steg++;
 
@@ -228,10 +281,10 @@ function kolla(){
       visaKarta();
     } else {
       clearInterval(timer);
-      alert("Klar! Tid: "+tid);
+      alert("🎉 Klar! Tid: "+tid+" sek");
     }
   } else {
-    feedback.innerText="Fel";
+    feedback.innerText="Fel svar";
   }
 }
 </script>
