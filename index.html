@@ -82,7 +82,6 @@ video {
   <img id="bild">
 </div>
 
-<!-- EDITOR -->
 <div id="editor">
   <h3>Ny kontroll</h3>
 
@@ -98,7 +97,6 @@ video {
   <button onclick="spara()">Spara</button>
 </div>
 
-<!-- SCAN -->
 <div id="scan">
   <h3>📸 Hitta platsen</h3>
 
@@ -110,7 +108,6 @@ video {
   <button onclick="klarScan()">Scanna</button>
 </div>
 
-<!-- FRÅGA -->
 <div id="fragaRuta">
   <h3 id="fragaText"></h3>
   <input id="svarElever">
@@ -130,7 +127,7 @@ kartInput.onchange=e=>{
   r.readAsDataURL(e.target.files[0]);
 };
 
-/* KLICK → RING */
+/* KLICK */
 karta.addEventListener("click", function(e){
 
   if(mode !== "edit"){
@@ -207,15 +204,13 @@ function visaKarta(){
   scan.style.display="block";
 }
 
-/* ✅ RÄTT KAMERA (BAK-KAMERA) */
+/* BAKKAMERA */
 function startCamera(){
 
   navigator.mediaDevices.getUserMedia({
     video: { facingMode: { exact: "environment" } }
   })
-  .then(stream => {
-    video.srcObject = stream;
-  })
+  .then(stream => video.srcObject = stream)
   .catch(() => {
     navigator.mediaDevices.getUserMedia({
       video: { facingMode: "environment" }
@@ -224,13 +219,8 @@ function startCamera(){
   });
 }
 
-/* BILDJÄMFÖRELSE */
+/* ✅ HÄR ÄR ÄNDRINGEN → 95% */
 function klarScan(){
-
-  if(!video.srcObject){
-    alert("Starta kameran först!");
-    return;
-  }
 
   let canvas=document.createElement("canvas");
   let ctx=canvas.getContext("2d");
@@ -266,7 +256,9 @@ function klarScan(){
     let max = 100*100*255*3;
     let procent = Math.round((1 - diff/max)*100);
 
+    /* ✅ NYTT KRAV */
     if(procent > 95){
+
       alert("✅ Match ("+procent+"%)");
 
       scan.style.display="none";
@@ -274,7 +266,9 @@ function klarScan(){
       fragaText.innerText=bana[steg].fraga;
 
     } else {
+
       alert("❌ För låg match ("+procent+"%)");
+
     }
   };
 }
