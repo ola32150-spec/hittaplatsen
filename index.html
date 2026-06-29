@@ -100,11 +100,13 @@ video {
 
 <!-- SCAN -->
 <div id="scan">
-  <h3>📸 Rikta kameran mot platsen</h3>
+  <h3>📸 Tryck Scanna och rikta kameran</h3>
 
   <img id="referens" width="100%"><br><br>
 
   <video id="video" autoplay></video><br>
+
+  <button onclick="startScan()">Scanna</button>
 </div>
 
 <!-- FRÅGA -->
@@ -160,6 +162,11 @@ function setMode(m){
 /* SPARA */
 function spara(){
 
+  if(!bildInput.files[0]){
+    alert("Lägg till bild!");
+    return;
+  }
+
   let obj={
     top:tempY,
     left:tempX,
@@ -198,11 +205,10 @@ function startSpel(){
 function visaKarta(){
   referens.src=bana[steg].bild;
   scan.style.display="block";
-  startCamera();
 }
 
-/* ✅ KAMERA */
-function startCamera(){
+/* ✅ SCAN STARTAR KAMERA */
+function startScan(){
 
   navigator.mediaDevices.getUserMedia({
     video:{ facingMode:{ exact:"environment"} }
@@ -223,7 +229,7 @@ function startCamera(){
   });
 }
 
-/* ✅ LIVE SCAN */
+/* ✅ LIVE MATCH */
 function liveScan(){
 
   if(!scanning) return;
@@ -266,8 +272,6 @@ function liveScan(){
 
     let max=100*100*255*3;
     let procent=Math.round((1-diff/max)*100);
-
-    console.log("Match:", procent);
 
     if(procent > 85){
 
