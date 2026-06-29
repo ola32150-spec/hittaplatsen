@@ -13,7 +13,6 @@ body {
   text-align: center;
 }
 
-/* TOPBAR */
 #topbar {
   display: flex;
   justify-content: space-between;
@@ -21,8 +20,10 @@ body {
   background: rgba(0,0,0,0.3);
 }
 
-/* KARTA */
-#karta img { width: 100%; border-radius: 10px; }
+#karta img {
+  width: 100%;
+  border-radius: 10px;
+}
 
 .plats {
   position: absolute;
@@ -34,7 +35,6 @@ body {
   pointer-events: none;
 }
 
-/* UI */
 button {
   width: 100%;
   padding: 12px;
@@ -54,14 +54,8 @@ button {
   border-radius: 12px;
 }
 
-/* LÄRARE */
-.larareUI { display: none; }
+.larareUI { display: block; }
 .elev .larareUI { display: none; }
-
-/* LOGIN */
-#loginBox {
-  padding: 10px;
-}
 </style>
 </head>
 
@@ -74,14 +68,9 @@ button {
 
 <h2>Kartjakten</h2>
 
-<!-- LOGIN -->
-<div id="loginBox">
-  <input id="email" placeholder="Lärar‑mail">
-  <button onclick="login()">Logga in</button>
-</div>
-
 <!-- LÄRARDEL -->
 <div class="larareUI">
+
   <input type="file" id="kartInput">
 
   <button onclick="setMode('edit')">Redigera</button>
@@ -91,9 +80,10 @@ button {
   <button onclick="sparaMedNamn()">💾 Spara bana</button>
 
   <select id="banLista"></select>
-  <button onclick="laddaVald()">📂 Ladda</button>
+  <button onclick="laddaVald()">📂 Ladda bana</button>
 
-  <button onclick="skapaQR()">📱 Visa QR</button>
+  <button onclick="skapaQR()">📱 Visa QR‑kod</button>
+
 </div>
 
 <!-- QR -->
@@ -106,10 +96,10 @@ button {
 <div id="karta"><img id="bild"></div>
 
 <!-- EDITOR -->
-<div id="editor" class="larareUI">
-  <input id="fragaInput" placeholder="Fråga">
-  <input type="file" id="bildInput">
-  <input id="svarInput" placeholder="Svar">
+<div id="editor">
+  <input id="fragaInput" placeholder="Fråga"><br>
+  <input type="file" id="bildInput"><br>
+  <input id="svarInput" placeholder="Svar"><br>
   <button onclick="spara()">Spara kontroll</button>
 </div>
 
@@ -135,6 +125,7 @@ let tempX, tempY;
 
 /* AUTO QR / ELEVLÄGE */
 window.onload=function(){
+
   let params=new URLSearchParams(window.location.search);
   let data=params.get("bana");
 
@@ -156,18 +147,7 @@ window.onload=function(){
   uppdateraLista();
 };
 
-/* LOGIN */
-function login(){
-  if(email.value==="ola@skola.se"){ // ändra till din mail
-    loginBox.style.display="none";
-    document.querySelectorAll(".larareUI")
-      .forEach(el => el.style.display="block");
-  } else {
-    alert("Fel mail");
-  }
-}
-
-/* KARTA */
+/* LADDA KARTA */
 kartInput.onchange=e=>{
   let r=new FileReader();
   r.onload=ev=>bild.src=ev.target.result;
@@ -193,6 +173,7 @@ function setMode(m){
 
 /* SPARA */
 function spara(){
+
   let obj={
     top:tempY,left:tempX,
     fraga:fragaInput.value,
@@ -224,15 +205,14 @@ function startSpel(){
 
   timer=setInterval(()=>{
     tid++;
-    tidEl.innerText=tid;
+    document.getElementById("tid").innerText=tid;
   },1000);
 
   visaKarta();
 }
 
 function visaKarta(){
-  let k=bana[steg];
-  referens.src=k.bild;
+  referens.src=bana[steg].bild;
   scan.style.display="block";
 }
 
@@ -245,18 +225,22 @@ function klarScan(){
 /* SVAR */
 function kolla(){
   if(svarElever.value.toLowerCase()===bana[steg].svar.toLowerCase()){
-    poang++; poangEl.innerText=poang;
+    poang++;
+    document.getElementById("poang").innerText=poang;
+
     steg++;
 
-    if(steg<bana.length) visaKarta();
+    if(steg<bana.length){visaKarta();}
     else{
       clearInterval(timer);
-      alert("Klar! Tid: "+tid);
+      alert("🎉 Klar! Tid: "+tid+" sek");
     }
-  } else feedback.innerText="Fel";
+  } else {
+    feedback.innerText="Fel";
+  }
 }
 
-/* ✅ QR */
+/* QR */
 function skapaQR(){
   let data=encodeURIComponent(JSON.stringify(bana));
   let url=location.origin+location.pathname+"?bana="+data;
@@ -266,7 +250,7 @@ function skapaQR(){
   qrBox.style.display="block";
 }
 
-/* ✅ SPARA BANOR */
+/* SPARA BANOR */
 function sparaMedNamn(){
   let namn=banNamn.value;
   let alla=JSON.parse(localStorage.getItem("banor")||"{}");
@@ -277,21 +261,18 @@ function sparaMedNamn(){
   uppdateraLista();
 }
 
-/* ✅ LADDA LISTA */
+/* LISTA */
 function uppdateraLista(){
-  let lista=banLista;
-  lista.innerHTML="";
-
+  banLista.innerHTML="";
   let alla=JSON.parse(localStorage.getItem("banor")||"{}");
 
   Object.keys(alla).forEach(n=>{
     let o=document.createElement("option");
     o.value=n; o.innerText=n;
-    lista.appendChild(o);
+    banLista.appendChild(o);
   });
 }
 
-/* ✅ LADDA */
 function laddaVald(){
   let alla=JSON.parse(localStorage.getItem("banor")||"{}");
   bana=alla[banLista.value];
