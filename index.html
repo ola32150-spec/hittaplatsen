@@ -18,21 +18,13 @@ body {
   display: flex;
   justify-content: space-between;
   padding: 12px;
-  font-size: 18px;
   background: rgba(0,0,0,0.3);
 }
 
 /* KARTA */
-#kartaWrapper {
-  width: 100%;
-}
+#kartaWrapper { width: 100%; }
+#karta img { width: 100%; border-radius: 10px; }
 
-#karta img {
-  width: 100%;
-  border-radius: 10px;
-}
-
-/* KONTROLLER */
 .plats {
   position: absolute;
   width: 28px;
@@ -43,7 +35,20 @@ body {
   pointer-events: none;
 }
 
-/* KORT */
+/* UI */
+button {
+  width: 100%;
+  padding: 15px;
+  margin-top: 8px;
+  border-radius: 12px;
+  font-size: 18px;
+  border: none;
+  background: #2ecc71;
+  color: white;
+}
+
+button.secondary { background: #3498db; }
+
 #scan, #fragaRuta {
   display: none;
   background: white;
@@ -53,46 +58,28 @@ body {
   width: 90%;
   max-width: 400px;
   margin: 15px auto;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
 }
 
-/* KNAPPAR */
-button {
-  width: 100%;
-  padding: 15px;
-  margin-top: 8px;
-  border: none;
-  border-radius: 12px;
-  font-size: 18px;
-  background: #2ecc71;
-  color: white;
-}
+/* LÄRARE */
+.larareUI { display: block; }
+.elev .larareUI { display: none; }
 
-button.secondary {
-  background: #3498db;
-}
+video { width: 100%; border-radius: 10px; }
 
-/* VIDEO */
-video {
-  width: 100%;
-  border-radius: 10px;
-}
-
-/* LÄRARE UI */
-.larareUI {
-  display: block;
-}
-
-/* GÖM I ELEVLÄGE */
-.elev .larareUI {
-  display: none;
+/* QR BOX */
+#qrBox {
+  display:none;
+  background:white;
+  color:black;
+  padding:15px;
+  margin:10px;
+  border-radius:12px;
 }
 </style>
 </head>
 
 <body>
 
-<!-- TOPBAR -->
 <div id="topbar">
   <div>⭐ <span id="poang">0</span></div>
   <div>⏱️ <span id="tid">0</span>s</div>
@@ -103,10 +90,20 @@ video {
 <!-- LÄRARDEL -->
 <div class="larareUI">
   <input type="file" id="kartInput"><br>
+
   <button onclick="setMode('edit')">Redigera</button>
   <button onclick="setMode('play')">Spela</button>
 
   <button onclick="sparaBana()">💾 Spara</button>
+
+  <!-- ✅ QR KNAPP -->
+  <button onclick="skapaQR()">📱 Visa QR‑kod</button>
+</div>
+
+<!-- ✅ QR VISNING -->
+<div id="qrBox">
+  <h3>QR‑kod för elever</h3>
+  <img id="qrBild" width="220">
 </div>
 
 <!-- KARTA -->
@@ -118,19 +115,17 @@ video {
 
 <!-- EDITOR -->
 <div id="editor" class="larareUI" style="display:none;">
-  <input id="fragaInput" placeholder="Fråga"><br><br>
-  <input type="file" id="bildInput"><br><br>
-  <input id="svarInput" placeholder="Svar"><br><br>
+  <input id="fragaInput" placeholder="Fråga"><br>
+  <input type="file" id="bildInput"><br>
+  <input id="svarInput" placeholder="Svar"><br>
   <button onclick="spara()">Spara kontroll</button>
 </div>
 
 <!-- SCAN -->
 <div id="scan">
-  <h2>📸 Hitta platsen</h2>
+  <h2>📸 Gå till platsen</h2>
   <img id="referens"><br>
-
   <video id="video" autoplay></video>
-
   <button class="secondary" onclick="startCamera()">Start kamera</button>
   <button onclick="klarScan()">✅ Jag är här</button>
 </div>
@@ -138,11 +133,8 @@ video {
 <!-- FRÅGA -->
 <div id="fragaRuta">
   <h2 id="fragaText"></h2>
-
-  <input id="svarElever" style="width:100%; padding:10px; font-size:18px;"><br>
-
+  <input id="svarElever">
   <button onclick="kolla()">Svara</button>
-
   <p id="feedback"></p>
 </div>
 
@@ -152,14 +144,13 @@ let mode="none";
 let steg=0, poang=0, tid=0, timer=null;
 let tempX, tempY;
 
-/* ✅ AUTO QR + ELEVLÄGE */
-window.onload = function(){
-  const params = new URLSearchParams(window.location.search);
-  const data = params.get("bana");
+/* AUTO QR / ELEVLÄGE */
+window.onload=function(){
+  let params=new URLSearchParams(window.location.search);
+  let data=params.get("bana");
 
   if(data){
-    bana = JSON.parse(decodeURIComponent(data));
-
+    bana=JSON.parse(decodeURIComponent(data));
     document.body.classList.add("elev");
 
     bana.forEach(k=>{
@@ -175,14 +166,14 @@ window.onload = function(){
 };
 
 /* LADDA KARTA */
-kartInput.onchange = e=>{
+kartInput.onchange=e=>{
   let r=new FileReader();
   r.onload=ev=>bild.src=ev.target.result;
   r.readAsDataURL(e.target.files[0]);
 };
 
 /* KLICK */
-karta.onclick = e=>{
+karta.onclick=e=>{
   if(mode!=="edit") return;
 
   let rect=bild.getBoundingClientRect();
@@ -192,13 +183,13 @@ karta.onclick = e=>{
   editor.style.display="block";
 };
 
-/* LÄGEN */
+/* MODE */
 function setMode(m){
   mode=m;
   if(m==="play") startSpel();
 }
 
-/* SPARA KONTROLL */
+/* SPARA */
 function spara(){
   let obj={
     top:tempY,
@@ -226,7 +217,7 @@ function spara(){
   editor.style.display="none";
 }
 
-/* START SPEL */
+/* SPEL */
 function startSpel(){
   steg=0;poang=0;tid=0;
 
@@ -247,7 +238,6 @@ function visaKarta(){
   p.style.left=k.left+"px";
 
   referens.src=k.bild;
-
   scan.style.display="block";
 }
 
@@ -268,28 +258,46 @@ function klarScan(){
 function kolla(){
   if(svarElever.value.toLowerCase()===bana[steg].svar.toLowerCase()){
     poang++;
-    poangEl.innerText=poang;
+    document.getElementById("poang").innerText=poang;
 
     steg++;
-
-    if(steg<bana.length){
-      visaKarta();
-    } else {
+    if(steg<bana.length){visaKarta();}
+    else{
       clearInterval(timer);
       alert("🎉 Klar! Tid: "+tid+" sek");
     }
   } else {
-    feedback.innerText="Fel svar";
+    feedback.innerText="Fel!";
   }
 }
 
-/* SPARA */
+/* SPARA FIL */
 function sparaBana(){
   let blob=new Blob([JSON.stringify(bana)],{type:"application/json"});
   let a=document.createElement("a");
   a.href=URL.createObjectURL(blob);
   a.download="bana.json";
   a.click();
+}
+
+/* ✅ QR DIREKT */
+function skapaQR(){
+
+  if(bana.length===0){
+    alert("Skapa bana först!");
+    return;
+  }
+
+  let data=encodeURIComponent(JSON.stringify(bana));
+
+  let url=window.location.origin +
+          window.location.pathname +
+          "?bana=" + data;
+
+  let qr="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data="+url;
+
+  document.getElementById("qrBild").src=qr;
+  document.getElementById("qrBox").style.display="block";
 }
 </script>
 
