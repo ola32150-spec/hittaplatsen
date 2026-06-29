@@ -2,7 +2,7 @@
 <html lang="sv">
 <head>
 <meta charset="UTF-8">
-<tile>Kartjakten</title>
+<title>Kartjakten</title>
 
 <style>
 body {
@@ -22,7 +22,6 @@ body {
 }
 
 /* KARTA */
-#kartaWrapper { width: 100%; }
 #karta img { width: 100%; border-radius: 10px; }
 
 .plats {
@@ -38,42 +37,30 @@ body {
 /* UI */
 button {
   width: 100%;
-  padding: 15px;
-  margin-top: 8px;
-  border-radius: 12px;
-  font-size: 18px;
+  padding: 12px;
+  margin-top: 6px;
+  border-radius: 10px;
   border: none;
   background: #2ecc71;
   color: white;
 }
 
-button.secondary { background: #3498db; }
-
-#scan, #fragaRuta {
+#editor, #scan, #fragaRuta, #qrBox {
   display: none;
   background: white;
   color: black;
-  border-radius: 16px;
-  padding: 20px;
-  width: 90%;
-  max-width: 400px;
-  margin: 15px auto;
+  padding: 15px;
+  margin: 10px;
+  border-radius: 12px;
 }
 
 /* LÄRARE */
-.larareUI { display: block; }
+.larareUI { display: none; }
 .elev .larareUI { display: none; }
 
-video { width: 100%; border-radius: 10px; }
-
-/* QR BOX */
-#qrBox {
-  display:none;
-  background:white;
-  color:black;
-  padding:15px;
-  margin:10px;
-  border-radius:12px;
+/* LOGIN */
+#loginBox {
+  padding: 10px;
 }
 </style>
 </head>
@@ -81,66 +68,68 @@ video { width: 100%; border-radius: 10px; }
 <body>
 
 <div id="topbar">
-  <div>⭐ <span id="poang">0</span></div>
-  <div>⏱️ <span id="tid">0</span>s</div>
+  ⭐ <span id="poang">0</span>
+  ⏱️ <span id="tid">0</span>s
 </div>
 
-<h2>🗺️ Kartjakten</h2>
+<h2>Kartjakten</h2>
+
+<!-- LOGIN -->
+<div id="loginBox">
+  <input id="email" placeholder="Lärar‑mail">
+  <button onclick="login()">Logga in</button>
+</div>
 
 <!-- LÄRARDEL -->
 <div class="larareUI">
-  <input type="file" id="kartInput"><br>
+  <input type="file" id="kartInput">
 
   <button onclick="setMode('edit')">Redigera</button>
   <button onclick="setMode('play')">Spela</button>
 
-  <button onclick="sparaBana()">💾 Spara</button>
+  <input id="banNamn" placeholder="Banans namn">
+  <button onclick="sparaMedNamn()">💾 Spara bana</button>
 
-  <!-- ✅ QR KNAPP -->
-  <button onclick="skapaQR()">📱 Visa QR‑kod</button>
+  <select id="banLista"></select>
+  <button onclick="laddaVald()">📂 Ladda</button>
+
+  <button onclick="skapaQR()">📱 Visa QR</button>
 </div>
 
-<!-- ✅ QR VISNING -->
+<!-- QR -->
 <div id="qrBox">
-  <h3>QR‑kod för elever</h3>
-  <img id="qrBild" width="220">
+  <h3>QR‑kod</h3>
+  <img id="qrBild">
 </div>
 
 <!-- KARTA -->
-<div id="kartaWrapper">
-  <div id="karta">
-    <img id="bild">
-  </div>
-</div>
+<div id="karta"><img id="bild"></div>
 
 <!-- EDITOR -->
-<div id="editor" class="larareUI" style="display:none;">
-  <input id="fragaInput" placeholder="Fråga"><br>
-  <input type="file" id="bildInput"><br>
-  <input id="svarInput" placeholder="Svar"><br>
+<div id="editor" class="larareUI">
+  <input id="fragaInput" placeholder="Fråga">
+  <input type="file" id="bildInput">
+  <input id="svarInput" placeholder="Svar">
   <button onclick="spara()">Spara kontroll</button>
 </div>
 
 <!-- SCAN -->
 <div id="scan">
-  <h2>📸 Gå till platsen</h2>
+  <h3>Hitta platsen</h3>
   <img id="referens"><br>
-  <video id="video" autoplay></video>
-  <button class="secondary" onclick="startCamera()">Start kamera</button>
-  <button onclick="klarScan()">✅ Jag är här</button>
+  <button onclick="klarScan()">Jag är här</button>
 </div>
 
 <!-- FRÅGA -->
 <div id="fragaRuta">
-  <h2 id="fragaText"></h2>
+  <h3 id="fragaText"></h3>
   <input id="svarElever">
   <button onclick="kolla()">Svara</button>
   <p id="feedback"></p>
 </div>
 
 <script>
-let bana=[];
-let mode="none";
+let bana=[], mode="none";
 let steg=0, poang=0, tid=0, timer=null;
 let tempX, tempY;
 
@@ -161,11 +150,24 @@ window.onload=function(){
       karta.appendChild(p);
     });
 
-    setTimeout(startSpel,800);
+    setTimeout(startSpel,500);
   }
+
+  uppdateraLista();
 };
 
-/* LADDA KARTA */
+/* LOGIN */
+function login(){
+  if(email.value==="ola@skola.se"){ // ändra till din mail
+    loginBox.style.display="none";
+    document.querySelectorAll(".larareUI")
+      .forEach(el => el.style.display="block");
+  } else {
+    alert("Fel mail");
+  }
+}
+
+/* KARTA */
 kartInput.onchange=e=>{
   let r=new FileReader();
   r.onload=ev=>bild.src=ev.target.result;
@@ -192,8 +194,7 @@ function setMode(m){
 /* SPARA */
 function spara(){
   let obj={
-    top:tempY,
-    left:tempX,
+    top:tempY,left:tempX,
     fraga:fragaInput.value,
     svar:svarInput.value,
     bild:null
@@ -223,31 +224,18 @@ function startSpel(){
 
   timer=setInterval(()=>{
     tid++;
-    document.getElementById("tid").innerText=tid;
+    tidEl.innerText=tid;
   },1000);
 
   visaKarta();
 }
 
-/* VISA */
 function visaKarta(){
   let k=bana[steg];
-  let p=document.querySelector(".plats");
-
-  p.style.top=k.top+"px";
-  p.style.left=k.left+"px";
-
   referens.src=k.bild;
   scan.style.display="block";
 }
 
-/* KAMERA */
-function startCamera(){
-  navigator.mediaDevices.getUserMedia({video:true})
-    .then(s=>video.srcObject=s);
-}
-
-/* SCAN */
 function klarScan(){
   scan.style.display="none";
   fragaRuta.style.display="block";
@@ -257,47 +245,66 @@ function klarScan(){
 /* SVAR */
 function kolla(){
   if(svarElever.value.toLowerCase()===bana[steg].svar.toLowerCase()){
-    poang++;
-    document.getElementById("poang").innerText=poang;
-
+    poang++; poangEl.innerText=poang;
     steg++;
-    if(steg<bana.length){visaKarta();}
+
+    if(steg<bana.length) visaKarta();
     else{
       clearInterval(timer);
-      alert("🎉 Klar! Tid: "+tid+" sek");
+      alert("Klar! Tid: "+tid);
     }
-  } else {
-    feedback.innerText="Fel!";
-  }
+  } else feedback.innerText="Fel";
 }
 
-/* SPARA FIL */
-function sparaBana(){
-  let blob=new Blob([JSON.stringify(bana)],{type:"application/json"});
-  let a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);
-  a.download="bana.json";
-  a.click();
-}
-
-/* ✅ QR DIREKT */
+/* ✅ QR */
 function skapaQR(){
-
-  if(bana.length===0){
-    alert("Skapa bana först!");
-    return;
-  }
-
   let data=encodeURIComponent(JSON.stringify(bana));
+  let url=location.origin+location.pathname+"?bana="+data;
+  let qr="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data="+url;
 
-  let url=window.location.origin +
-          window.location.pathname +
-          "?bana=" + data;
+  qrBild.src=qr;
+  qrBox.style.display="block";
+}
 
-  let qr="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data="+url;
+/* ✅ SPARA BANOR */
+function sparaMedNamn(){
+  let namn=banNamn.value;
+  let alla=JSON.parse(localStorage.getItem("banor")||"{}");
 
-  document.getElementById("qrBild").src=qr;
-  document.getElementById("qrBox").style.display="block";
+  alla[namn]=bana;
+  localStorage.setItem("banor",JSON.stringify(alla));
+
+  uppdateraLista();
+}
+
+/* ✅ LADDA LISTA */
+function uppdateraLista(){
+  let lista=banLista;
+  lista.innerHTML="";
+
+  let alla=JSON.parse(localStorage.getItem("banor")||"{}");
+
+  Object.keys(alla).forEach(n=>{
+    let o=document.createElement("option");
+    o.value=n; o.innerText=n;
+    lista.appendChild(o);
+  });
+}
+
+/* ✅ LADDA */
+function laddaVald(){
+  let alla=JSON.parse(localStorage.getItem("banor")||"{}");
+  bana=alla[banLista.value];
+
+  document.querySelectorAll(".plats").forEach(p=>p.remove());
+
+  bana.forEach(k=>{
+    let p=document.createElement("div");
+    p.className="plats";
+    p.style.top=k.top+"px";
+    p.style.left=k.left+"px";
+    karta.appendChild(p);
+  });
 }
 </script>
 
