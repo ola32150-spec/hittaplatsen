@@ -28,7 +28,6 @@ body {
   border-radius: 10px;
 }
 
-/* RINGAR */
 .plats {
   position: absolute;
   width: 28px;
@@ -99,7 +98,7 @@ video {
   <button onclick="spara()">Spara</button>
 </div>
 
-<!-- SCAN MED KAMERA -->
+<!-- SCAN -->
 <div id="scan">
   <h3>📸 Hitta platsen</h3>
 
@@ -131,10 +130,10 @@ kartInput.onchange=e=>{
   r.readAsDataURL(e.target.files[0]);
 };
 
-/* KLICK → SKAPA RING */
-document.getElementById("karta").addEventListener("click", function(e){
+/* KLICK → RING */
+karta.addEventListener("click", function(e){
 
-  if(mode !== "edit") {
+  if(mode !== "edit"){
     alert("Tryck på Redigera först");
     return;
   }
@@ -154,7 +153,7 @@ document.getElementById("karta").addEventListener("click", function(e){
 
 }, true);
 
-/* LÄGE */
+/* MODE */
 function setMode(m){
   mode=m;
   if(m==="play") startSpel();
@@ -208,13 +207,24 @@ function visaKarta(){
   scan.style.display="block";
 }
 
-/* KAMERA */
+/* ✅ RÄTT KAMERA (BAK-KAMERA) */
 function startCamera(){
-  navigator.mediaDevices.getUserMedia({video:true})
-    .then(s=>video.srcObject=s);
+
+  navigator.mediaDevices.getUserMedia({
+    video: { facingMode: { exact: "environment" } }
+  })
+  .then(stream => {
+    video.srcObject = stream;
+  })
+  .catch(() => {
+    navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment" }
+    })
+    .then(stream => video.srcObject = stream);
+  });
 }
 
-/* ✅ BILDJÄMFÖRELSE */
+/* BILDJÄMFÖRELSE */
 function klarScan(){
 
   if(!video.srcObject){
@@ -257,7 +267,7 @@ function klarScan(){
     let procent = Math.round((1 - diff/max)*100);
 
     if(procent > 65){
-      alert("✅ Rätt! ("+procent+"%)");
+      alert("✅ Match ("+procent+"%)");
 
       scan.style.display="none";
       fragaRuta.style.display="block";
