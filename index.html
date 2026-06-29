@@ -5,170 +5,200 @@
 <title>Kartjakten</title>
 
 <style>
-body { font-family: Arial; text-align: center; background: #eef2f7; }
-
-#kartaWrapper {
-  width: 90%;
-  max-width: 600px;
-  margin: 20px auto;
-  border: 2px solid black;
+body {
+  font-family: -apple-system, Arial;
+  background: linear-gradient(#1e3c72, #2a5298);
+  color: white;
+  margin: 0;
+  text-align: center;
 }
 
-#karta { position: relative; }
-#karta img { width: 100%; }
+/* TOPBAR */
+#topbar {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px;
+  font-size: 18px;
+  background: rgba(0,0,0,0.3);
+}
 
+/* KARTA */
+#kartaWrapper {
+  width: 100%;
+}
+
+#karta img {
+  width: 100%;
+  border-radius: 10px;
+}
+
+/* KONTROLLER */
 .plats {
   position: absolute;
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   border: 4px solid red;
   border-radius: 50%;
   transform: translate(-50%, -50%);
   pointer-events: none;
 }
 
-#editor, #scan, #fragaRuta {
+/* KORT */
+#scan, #fragaRuta {
   display: none;
   background: white;
+  color: black;
+  border-radius: 16px;
+  padding: 20px;
+  width: 90%;
+  max-width: 400px;
+  margin: 15px auto;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+/* KNAPPAR */
+button {
+  width: 100%;
   padding: 15px;
-  width: 300px;
-  margin: 10px auto;
+  margin-top: 8px;
+  border: none;
+  border-radius: 12px;
+  font-size: 18px;
+  background: #2ecc71;
+  color: white;
+}
+
+button.secondary {
+  background: #3498db;
+}
+
+/* VIDEO */
+video {
+  width: 100%;
   border-radius: 10px;
 }
 
-video { width: 100%; }
+/* LÄRARE UI */
+.larareUI {
+  display: block;
+}
 
-button { padding: 10px; margin: 5px; }
+/* GÖM I ELEVLÄGE */
+.elev .larareUI {
+  display: none;
+}
 </style>
 </head>
 
 <body>
 
-<h1>🗺️ Kartjakten</h1>
+<!-- TOPBAR -->
+<div id="topbar">
+  <div>⭐ <span id="poang">0</span></div>
+  <div>⏱️ <span id="tid">0</span>s</div>
+</div>
 
-<input type="file" accept="image/*" id="kartInput">
-<p id="info">1. Ladda karta → 2. Klicka Redigera</p>
+<h2>🗺️ Kartjakten</h2>
 
-<button onclick="setMode('edit')">🧑‍🏫 Redigera</button>
-<button onclick="setMode('play')">▶️ Spela</button>
+<!-- LÄRARDEL -->
+<div class="larareUI">
+  <input type="file" id="kartInput"><br>
+  <button onclick="setMode('edit')">Redigera</button>
+  <button onclick="setMode('play')">Spela</button>
 
-<br><br>
+  <button onclick="sparaBana()">💾 Spara</button>
+</div>
 
-<button onclick="sparaBana()">💾 Spara bana</button>
-<input type="file" id="laddaInput">
-
-<p>Poäng: <span id="poang">0</span> | Tid: <span id="tid">0</span></p>
-
+<!-- KARTA -->
 <div id="kartaWrapper">
   <div id="karta">
     <img id="bild">
   </div>
 </div>
 
-<p id="feedback"></p>
-
 <!-- EDITOR -->
-<div id="editor">
-  <h3>Ny kontroll</h3>
-
+<div id="editor" class="larareUI" style="display:none;">
   <input id="fragaInput" placeholder="Fråga"><br><br>
   <input type="file" id="bildInput"><br><br>
-  <input id="svarInput" placeholder="Rätt svar"><br><br>
-
-  <button onclick="spara()">Spara</button>
+  <input id="svarInput" placeholder="Svar"><br><br>
+  <button onclick="spara()">Spara kontroll</button>
 </div>
 
 <!-- SCAN -->
 <div id="scan">
-  <h3>📸 Hitta platsen</h3>
+  <h2>📸 Hitta platsen</h2>
+  <img id="referens"><br>
 
-  <img id="referens" width="100%"><br><br>
+  <video id="video" autoplay></video>
 
-  <video id="video" autoplay></video><br>
-
-  <button onclick="startCamera()">Start kamera</button>
-  <button onclick="klarScan()">✅ Scanna</button>
+  <button class="secondary" onclick="startCamera()">Start kamera</button>
+  <button onclick="klarScan()">✅ Jag är här</button>
 </div>
 
 <!-- FRÅGA -->
 <div id="fragaRuta">
-  <h3 id="fragaText"></h3>
-  <input id="svarElever">
+  <h2 id="fragaText"></h2>
+
+  <input id="svarElever" style="width:100%; padding:10px; font-size:18px;"><br>
+
   <button onclick="kolla()">Svara</button>
-  <p id="feedbackSvar"></p>
+
+  <p id="feedback"></p>
 </div>
 
 <script>
-let bana = [];
-let mode = "none";
-
-let tempX=0,tempY=0;
+let bana=[];
+let mode="none";
 let steg=0, poang=0, tid=0, timer=null;
+let tempX, tempY;
 
-/* ✅ AUTO-LADDA VIA QR */
-window.onload = function() {
-
+/* ✅ AUTO QR + ELEVLÄGE */
+window.onload = function(){
   const params = new URLSearchParams(window.location.search);
-  const banaData = params.get("bana");
+  const data = params.get("bana");
 
-  if (banaData) {
-    try {
-      bana = JSON.parse(decodeURIComponent(banaData));
+  if(data){
+    bana = JSON.parse(decodeURIComponent(data));
 
-      bana.forEach(k => {
-        let p = document.createElement("div");
-        p.className = "plats";
-        p.style.top = k.top + "px";
-        p.style.left = k.left + "px";
-        karta.appendChild(p);
-      });
+    document.body.classList.add("elev");
 
-      document.getElementById("feedback").innerText =
-        "✅ Bana laddad från QR";
+    bana.forEach(k=>{
+      let p=document.createElement("div");
+      p.className="plats";
+      p.style.top=k.top+"px";
+      p.style.left=k.left+"px";
+      karta.appendChild(p);
+    });
 
-    } catch(e) {
-      alert("Fel vid laddning av bana");
-    }
+    setTimeout(startSpel,800);
   }
 };
 
-// ✅ LADDA KARTA
-kartInput.addEventListener("change", function(e){
-  let r = new FileReader();
-  r.onload = ev => bild.src = ev.target.result;
+/* LADDA KARTA */
+kartInput.onchange = e=>{
+  let r=new FileReader();
+  r.onload=ev=>bild.src=ev.target.result;
   r.readAsDataURL(e.target.files[0]);
-});
+};
 
-// ✅ KLICK PÅ KARTA
-karta.addEventListener("click", function(e){
-  if(mode !== "edit") return;
+/* KLICK */
+karta.onclick = e=>{
+  if(mode!=="edit") return;
 
-  let rect = bild.getBoundingClientRect();
+  let rect=bild.getBoundingClientRect();
+  tempX=e.clientX-rect.left;
+  tempY=e.clientY-rect.top;
 
-  tempX = e.clientX - rect.left;
-  tempY = e.clientY - rect.top;
+  editor.style.display="block";
+};
 
-  editor.style.display = "block";
-});
-
-// ✅ LÄGE
+/* LÄGEN */
 function setMode(m){
-  mode = m;
-
-  if(m==="edit"){
-    feedback.innerText = "👉 Klicka på kartan för att skapa kontroll";
-  }
-
-  if(m==="play"){
-    if(bana.length===0){
-      alert("Ingen bana!");
-      return;
-    }
-    startSpel();
-  }
+  mode=m;
+  if(m==="play") startSpel();
 }
 
-// ✅ SPARA KONTROLL
+/* SPARA KONTROLL */
 function spara(){
   let obj={
     top:tempY,
@@ -178,11 +208,11 @@ function spara(){
     bild:null
   };
 
-  let file = bildInput.files[0];
-  if(file){
+  let f=bildInput.files[0];
+  if(f){
     let r=new FileReader();
-    r.onload = e => obj.bild = e.target.result;
-    r.readAsDataURL(file);
+    r.onload=e=>obj.bild=e.target.result;
+    r.readAsDataURL(f);
   }
 
   bana.push(obj);
@@ -191,16 +221,14 @@ function spara(){
   p.className="plats";
   p.style.top=tempY+"px";
   p.style.left=tempX+"px";
-
   karta.appendChild(p);
+
   editor.style.display="none";
 }
 
-// ✅ START SPEL
+/* START SPEL */
 function startSpel(){
-  steg=0;
-  poang=0;
-  tid=0;
+  steg=0;poang=0;tid=0;
 
   timer=setInterval(()=>{
     tid++;
@@ -210,7 +238,7 @@ function startSpel(){
   visaKarta();
 }
 
-// ✅ VISA KARTA
+/* VISA */
 function visaKarta(){
   let k=bana[steg];
   let p=document.querySelector(".plats");
@@ -223,24 +251,22 @@ function visaKarta(){
   scan.style.display="block";
 }
 
-// ✅ KAMERA
+/* KAMERA */
 function startCamera(){
   navigator.mediaDevices.getUserMedia({video:true})
-    .then(s => video.srcObject=s);
+    .then(s=>video.srcObject=s);
 }
 
-// ✅ SCAN
+/* SCAN */
 function klarScan(){
   scan.style.display="none";
   fragaRuta.style.display="block";
   fragaText.innerText=bana[steg].fraga;
 }
 
-// ✅ SVAR
+/* SVAR */
 function kolla(){
-  let val=svarElever.value.toLowerCase();
-
-  if(val===bana[steg].svar.toLowerCase()){
+  if(svarElever.value.toLowerCase()===bana[steg].svar.toLowerCase()){
     poang++;
     poangEl.innerText=poang;
 
@@ -253,11 +279,11 @@ function kolla(){
       alert("🎉 Klar! Tid: "+tid+" sek");
     }
   } else {
-    feedbackSvar.innerText="Fel!";
+    feedback.innerText="Fel svar";
   }
 }
 
-// ✅ SPARA BANA
+/* SPARA */
 function sparaBana(){
   let blob=new Blob([JSON.stringify(bana)],{type:"application/json"});
   let a=document.createElement("a");
