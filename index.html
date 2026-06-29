@@ -100,14 +100,11 @@ video {
 
 <!-- SCAN -->
 <div id="scan">
-  <h3>📸 Hitta platsen</h3>
+  <h3>📸 Rikta kameran mot platsen</h3>
 
   <img id="referens" width="100%"><br><br>
 
   <video id="video" autoplay></video><br>
-
-  <button onclick="startCamera()">Start kamera</button>
-  <button onclick="klarScan()">Scanna</button>
 </div>
 
 <!-- FRÅGA -->
@@ -122,6 +119,7 @@ video {
 let bana=[], mode="none";
 let steg=0, poang=0, tid=0, timer=null;
 let tempX=0,tempY=0;
+let scanning=false;
 
 /* LADDA KARTA */
 kartInput.onchange=e=>{
@@ -130,7 +128,7 @@ kartInput.onchange=e=>{
   r.readAsDataURL(e.target.files[0]);
 };
 
-/* KLICK → RING */
+/* KLICK */
 karta.addEventListener("click", function(e){
 
   if(mode !== "edit"){
@@ -161,11 +159,6 @@ function setMode(m){
 
 /* SPARA */
 function spara(){
-
-  if(!bildInput.files[0]){
-    alert("Lägg till bild!");
-    return;
-  }
 
   let obj={
     top:tempY,
@@ -205,26 +198,38 @@ function startSpel(){
 function visaKarta(){
   referens.src=bana[steg].bild;
   scan.style.display="block";
+  startCamera();
 }
 
-/* ✅ BAKKAMERA */
+/* ✅ KAMERA */
 function startCamera(){
+
   navigator.mediaDevices.getUserMedia({
-    video: { facingMode: { exact:"environment" } }
+    video:{ facingMode:{ exact:"environment"} }
   })
-  .then(s => video.srcObject=s)
+  .then(stream=>{
+    video.srcObject=stream;
+    scanning=true;
+    liveScan();
+  })
   .catch(()=>{
     navigator.mediaDevices.getUserMedia({
       video:{ facingMode:"environment" }
-    }).then(s=>video.srcObject=s);
+    }).then(stream=>{
+      video.srcObject=stream;
+      scanning=true;
+      liveScan();
+    });
   });
 }
 
-/* ✅ BILDIGENKÄNNING 85% */
-function klarScan(){
+/* ✅ LIVE SCAN */
+function liveScan(){
 
-  if(!video.srcObject){
-    alert("Starta kameran först!");
+  if(!scanning) return;
+
+  if(!video.videoWidth){
+    setTimeout(liveScan,300);
     return;
   }
 
@@ -259,22 +264,25 @@ function klarScan(){
       diff += Math.abs(elevData[i+2]-refData[i+2]);
     }
 
-    let max = 100*100*255*3;
-    let procent = Math.round((1 - diff/max)*100);
+    let max=100*100*255*3;
+    let procent=Math.round((1-diff/max)*100);
+
+    console.log("Match:", procent);
 
     if(procent > 85){
 
-      alert("✅ Match ("+procent+"%)");
+      alert("✅ ScanMatch ("+procent+"%)");
+
+      scanning=false;
 
       scan.style.display="none";
       fragaRuta.style.display="block";
       fragaText.innerText=bana[steg].fraga;
 
-    } else {
-
-      alert("❌ För låg match ("+procent+"%)");
-
+      return;
     }
+
+    setTimeout(liveScan,500);
   };
 }
 
@@ -288,7 +296,7 @@ function kolla(){
 
     if(steg<bana.length){
       visaKarta();
-    } else {
+    }else{
       clearInterval(timer);
       alert("🎉 Klar! Tid: "+tid+" sek");
     }
