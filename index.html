@@ -20,6 +20,7 @@ body {
   background: rgba(0,0,0,0.3);
 }
 
+/* KARTA */
 #karta {
   position: relative;
 }
@@ -28,6 +29,7 @@ body {
   border-radius: 10px;
 }
 
+/* RING */
 .plats {
   position: absolute;
   width: 28px;
@@ -38,28 +40,40 @@ body {
   pointer-events: none;
 }
 
+/* KNAPPAR */
 button {
-  width: 100%;
+  width: 90%;
+  max-width: 350px;
   padding: 12px;
-  margin-top: 6px;
-  border-radius: 10px;
+  margin-top: 8px;
+  border-radius: 12px;
   border: none;
   background: #2ecc71;
   color: white;
+  font-size: 16px;
 }
 
-#editor, #scan, #fragaRuta {
-  display: none;
+/* KORT (NY DESIGN) */
+.card {
   background: white;
   color: black;
-  padding: 15px;
-  margin: 10px;
+  padding: 12px;
+  margin: 15px auto;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 350px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+}
+
+.card img,
+.card video {
+  width: 100%;
   border-radius: 12px;
 }
 
-video {
-  width: 100%;
-  border-radius: 10px;
+/* UI RUTOR */
+#editor, #scan, #fragaRuta {
+  display: none;
 }
 </style>
 </head>
@@ -83,36 +97,38 @@ video {
 </div>
 
 <!-- EDITOR -->
-<div id="editor">
+<div id="editor" class="card">
   <h3>Ny kontroll</h3>
 
-  <p><b>1. Lägg till bild</b></p>
   <input type="file" id="bildInput"><br><br>
-
-  <p><b>2. Skriv fråga</b></p>
-  <input id="fragaInput"><br><br>
-
-  <p><b>3. Skriv svar</b></p>
-  <input id="svarInput"><br><br>
+  <input id="fragaInput" placeholder="Fråga"><br><br>
+  <input id="svarInput" placeholder="Svar"><br><br>
 
   <button onclick="spara()">Spara</button>
 </div>
 
-<!-- SCAN -->
+<!-- ✅ NY SNYGG SCAN -->
 <div id="scan">
-  <h3>📸 Tryck Scanna och rikta kameran</h3>
 
-  <img id="referens" width="100%"><br><br>
+  <h3>📸 Rikta kameran mot platsen</h3>
 
-  <video id="video" autoplay></video><br>
+  <div class="card">
+    <p>Referensbild</p>
+    <img id="referens">
+  </div>
+
+  <div class="card">
+    <p>Din kamera</p>
+    <video id="video" autoplay></video>
+  </div>
 
   <button onclick="startScan()">Scanna</button>
 </div>
 
 <!-- FRÅGA -->
-<div id="fragaRuta">
+<div id="fragaRuta" class="card">
   <h3 id="fragaText"></h3>
-  <input id="svarElever">
+  <input id="svarElever"><br><br>
   <button onclick="kolla()">Svara</button>
   <p id="feedback"></p>
 </div>
@@ -150,7 +166,6 @@ karta.addEventListener("click", function(e){
   karta.appendChild(p);
 
   editor.style.display="block";
-
 }, true);
 
 /* MODE */
@@ -161,11 +176,6 @@ function setMode(m){
 
 /* SPARA */
 function spara(){
-
-  if(!bildInput.files[0]){
-    alert("Lägg till bild!");
-    return;
-  }
 
   let obj={
     top:tempY,
@@ -196,7 +206,7 @@ function startSpel(){
 
   timer=setInterval(()=>{
     tid++;
-    document.getElementById("tid").innerText=tid;
+    tidEl.innerText=tid;
   },1000);
 
   visaKarta();
@@ -207,9 +217,8 @@ function visaKarta(){
   scan.style.display="block";
 }
 
-/* ✅ SCAN STARTAR KAMERA */
+/* SCAN START */
 function startScan(){
-
   navigator.mediaDevices.getUserMedia({
     video:{ facingMode:{ exact:"environment"} }
   })
@@ -229,7 +238,7 @@ function startScan(){
   });
 }
 
-/* ✅ LIVE MATCH */
+/* LIVE SCAN */
 function liveScan(){
 
   if(!scanning) return;
@@ -273,7 +282,7 @@ function liveScan(){
     let max=100*100*255*3;
     let procent=Math.round((1-diff/max)*100);
 
-    if(procent > 85){
+    if(procent > 90){
 
       alert("✅ ScanMatch ("+procent+"%)");
 
