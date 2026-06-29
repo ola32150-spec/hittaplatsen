@@ -5,11 +5,7 @@
 <title>Kartjakten</title>
 
 <style>
-body {
-  font-family: Arial;
-  text-align: center;
-  background: #eef2f7;
-}
+body { font-family: Arial; text-align: center; background: #eef2f7; }
 
 #kartaWrapper {
   width: 90%;
@@ -18,15 +14,9 @@ body {
   border: 2px solid black;
 }
 
-#karta {
-  position: relative;
-}
+#karta { position: relative; }
+#karta img { width: 100%; }
 
-#karta img {
-  width: 100%;
-}
-
-/* ✅ klick går igenom ringar */
 .plats {
   position: absolute;
   width: 30px;
@@ -46,16 +36,10 @@ body {
   border-radius: 10px;
 }
 
-video {
-  width: 100%;
-}
+video { width: 100%; }
 
-button {
-  padding: 10px;
-  margin: 5px;
-}
+button { padding: 10px; margin: 5px; }
 </style>
-
 </head>
 
 <body>
@@ -118,40 +102,45 @@ button {
 let bana = [];
 let mode = "none";
 
-let tempX=0, tempY=0;
+let tempX=0,tempY=0;
 let steg=0, poang=0, tid=0, timer=null;
 
+/* ✅ AUTO-LADDA VIA QR */
+window.onload = function() {
+
+  const params = new URLSearchParams(window.location.search);
+  const banaData = params.get("bana");
+
+  if (banaData) {
+    try {
+      bana = JSON.parse(decodeURIComponent(banaData));
+
+      bana.forEach(k => {
+        let p = document.createElement("div");
+        p.className = "plats";
+        p.style.top = k.top + "px";
+        p.style.left = k.left + "px";
+        karta.appendChild(p);
+      });
+
+      document.getElementById("feedback").innerText =
+        "✅ Bana laddad från QR";
+
+    } catch(e) {
+      alert("Fel vid laddning av bana");
+    }
+  }
+};
+
 // ✅ LADDA KARTA
-document.getElementById("kartInput").addEventListener("change", function(e){
-  let reader = new FileReader();
-  reader.onload = ev => bild.src = ev.target.result;
-  reader.readAsDataURL(e.target.files[0]);
+kartInput.addEventListener("change", function(e){
+  let r = new FileReader();
+  r.onload = ev => bild.src = ev.target.result;
+  r.readAsDataURL(e.target.files[0]);
 });
 
-// ✅ LADDA BANA
-document.getElementById("laddaInput").addEventListener("change", function(e){
-  let reader = new FileReader();
-  reader.onload = ev => {
-    bana = JSON.parse(ev.target.result);
-
-    document.querySelectorAll(".plats").forEach(p => p.remove());
-
-    bana.forEach(k=>{
-      let p = document.createElement("div");
-      p.className = "plats";
-      p.style.top = k.top + "px";
-      p.style.left = k.left + "px";
-      karta.appendChild(p);
-    });
-
-    alert("✅ Bana laddad");
-  };
-  reader.readAsText(e.target.files[0]);
-});
-
-// ✅ KLICK PÅ KARTA (STABIL)
-document.getElementById("karta").addEventListener("click", function(e){
-
+// ✅ KLICK PÅ KARTA
+karta.addEventListener("click", function(e){
   if(mode !== "edit") return;
 
   let rect = bild.getBoundingClientRect();
@@ -159,7 +148,7 @@ document.getElementById("karta").addEventListener("click", function(e){
   tempX = e.clientX - rect.left;
   tempY = e.clientY - rect.top;
 
-  document.getElementById("editor").style.display = "block";
+  editor.style.display = "block";
 });
 
 // ✅ LÄGE
@@ -172,7 +161,7 @@ function setMode(m){
 
   if(m==="play"){
     if(bana.length===0){
-      alert("Skapa bana först!");
+      alert("Ingen bana!");
       return;
     }
     startSpel();
@@ -181,47 +170,41 @@ function setMode(m){
 
 // ✅ SPARA KONTROLL
 function spara(){
-  let obj = {
-    top: tempY,
-    left: tempX,
-    fraga: fragaInput.value,
-    svar: svarInput.value,
-    bild: null
+  let obj={
+    top:tempY,
+    left:tempX,
+    fraga:fragaInput.value,
+    svar:svarInput.value,
+    bild:null
   };
 
   let file = bildInput.files[0];
   if(file){
-    let reader = new FileReader();
-    reader.onload = e => obj.bild = e.target.result;
-    reader.readAsDataURL(file);
+    let r=new FileReader();
+    r.onload = e => obj.bild = e.target.result;
+    r.readAsDataURL(file);
   }
 
   bana.push(obj);
 
-  let p = document.createElement("div");
-  p.className = "plats";
-  p.style.top = tempY + "px";
-  p.style.left = tempX + "px";
+  let p=document.createElement("div");
+  p.className="plats";
+  p.style.top=tempY+"px";
+  p.style.left=tempX+"px";
 
   karta.appendChild(p);
-
-  editor.style.display = "none";
-
-  fragaInput.value="";
-  svarInput.value="";
-  bildInput.value="";
+  editor.style.display="none";
 }
 
 // ✅ START SPEL
 function startSpel(){
-
   steg=0;
   poang=0;
   tid=0;
 
-  timer = setInterval(()=>{
+  timer=setInterval(()=>{
     tid++;
-    document.getElementById("tid").innerText = tid;
+    document.getElementById("tid").innerText=tid;
   },1000);
 
   visaKarta();
@@ -229,66 +212,57 @@ function startSpel(){
 
 // ✅ VISA KARTA
 function visaKarta(){
+  let k=bana[steg];
+  let p=document.querySelector(".plats");
 
-  let k = bana[steg];
-  let p = document.querySelector(".plats");
+  p.style.top=k.top+"px";
+  p.style.left=k.left+"px";
 
-  p.style.top = k.top + "px";
-  p.style.left = k.left + "px";
+  referens.src=k.bild;
 
-  referens.src = k.bild;
-
-  scan.style.display = "block";
-  fragaRuta.style.display = "none";
+  scan.style.display="block";
 }
 
 // ✅ KAMERA
 function startCamera(){
   navigator.mediaDevices.getUserMedia({video:true})
-    .then(s => video.srcObject = s);
+    .then(s => video.srcObject=s);
 }
 
 // ✅ SCAN
 function klarScan(){
-
-  if(!video.srcObject){
-    alert("Starta kameran först!");
-    return;
-  }
-
-  scan.style.display = "none";
-  fragaRuta.style.display = "block";
-
-  fragaText.innerText = bana[steg].fraga;
+  scan.style.display="none";
+  fragaRuta.style.display="block";
+  fragaText.innerText=bana[steg].fraga;
 }
 
 // ✅ SVAR
 function kolla(){
-  let val = svarElever.value.toLowerCase();
+  let val=svarElever.value.toLowerCase();
 
-  if(val === bana[steg].svar.toLowerCase()){
+  if(val===bana[steg].svar.toLowerCase()){
     poang++;
-    poangEl.innerText = poang;
+    poangEl.innerText=poang;
 
     steg++;
 
-    if(steg < bana.length){
+    if(steg<bana.length){
       visaKarta();
     } else {
       clearInterval(timer);
-      alert("🎉 Klar! Tid: " + tid + " sek");
+      alert("🎉 Klar! Tid: "+tid+" sek");
     }
   } else {
-    feedbackSvar.innerText = "Fel!";
+    feedbackSvar.innerText="Fel!";
   }
 }
 
 // ✅ SPARA BANA
 function sparaBana(){
-  let blob = new Blob([JSON.stringify(bana)],{type:"application/json"});
-  let a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "bana.json";
+  let blob=new Blob([JSON.stringify(bana)],{type:"application/json"});
+  let a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="bana.json";
   a.click();
 }
 </script>
