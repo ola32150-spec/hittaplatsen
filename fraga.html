@@ -22,6 +22,7 @@ body{
 #bild{
   width:100%;
   max-width:500px;
+  display:block;
 }
 
 .plats{
@@ -34,8 +35,8 @@ body{
   display:flex;
   align-items:center;
   justify-content:center;
-  background:black;
   color:white;
+  background:black;
   font-size:12px;
 }
 
@@ -90,10 +91,7 @@ video,img{width:100%;}
 <button onclick="startSpel()">Spela</button>
 
 <div id="bildWrapper">
-  <img id="bild">
-</div>
-
-<p id="antal">Punkter: 0</p>
+  <img id="bild" srctal">Punkter: 0</p>
 
 <!-- ✅ EDITOR -->
 <div id="editor">
@@ -111,9 +109,9 @@ video,img{width:100%;}
 
 <!-- ✅ SPEL -->
 <div id="spelUI">
-  <h3>Hitta platsen</h3>
-  <p id="spelProgress"></p>
-  <button onclick="visaScan()">Jag är här nu</button>
+<h3>Hitta platsen</h3>
+<p id="spelProgress"></p>
+<button onclick="visaScan()">Jag är här nu</button>
 </div>
 
 <!-- ✅ SCAN -->
@@ -140,6 +138,8 @@ video,img{width:100%;}
 </div>
 
 <script>
+
+/* ===== DATA ===== */
 let bana=[], mode="none";
 let tempX,tempY;
 let aktuellIndex=null;
@@ -147,18 +147,34 @@ let referensBild=null;
 
 let steg=0;
 let scanning=false;
-
 let aktuellKontroll=null;
 let aktuellFragaIndex=0;
 
-/* LADDA KARTA */
-kartInput.onchange=e=>{
-let r=new FileReader();
-r.onload=ev=>bild.src=ev.target.result;
-r.readAsDataURL(e.target.files[0]);
-};
+/* ===== ✅ FIX: STABIL KARTLADDNING ===== */
+document.getElementById("kartInput").addEventListener("change", function(e){
 
-/* KLICK KARTA */
+  const file = e.target.files[0];
+  if(!file) return;
+
+  const reader = new FileReader();
+
+  reader.onload = function(event){
+
+    const img = document.getElementById("bild");
+
+    img.src = event.target.result;
+
+    /* viktigt för iPad */
+    img.style.display = "block";
+
+    console.log("✅ Kartbild laddad OK");
+
+  };
+
+  reader.readAsDataURL(file);
+});
+
+/* ===== KLICK KARTA ===== */
 bild.onclick=e=>{
 if(mode!=="edit") return;
 
@@ -180,14 +196,14 @@ aktuellIndex=null;
 uppdateraBildLabel();
 };
 
-/* REFERENS */
+/* ===== REFERENS ===== */
 bildInput.onchange=e=>{
 let r=new FileReader();
 r.onload=ev=>referensBild=ev.target.result;
 r.readAsDataURL(e.target.files[0]);
 };
 
-/* DYNAMISK TEXT */
+/* ===== LABEL ===== */
 function uppdateraBildLabel(){
 let text="📷 Skapa referensbild";
 
@@ -200,7 +216,7 @@ text+=" till punkt "+(aktuellIndex+1);
 bildLabel.innerText=text;
 }
 
-/* SPARA */
+/* ===== SPARA ===== */
 function sparaPunkt(){
 
 bana.push({
@@ -221,9 +237,8 @@ svarInput.value="";
 uppdateraBildLabel();
 }
 
-/* LÄGG FRÅGA */
+/* ===== LÄGG FRÅGA ===== */
 function laggTillFraga(){
-
 if(aktuellIndex===null){
 alert("Skapa punkt först");
 return;
@@ -238,7 +253,7 @@ fragaInput.value="";
 svarInput.value="";
 }
 
-/* START SPEL */
+/* ===== SPEL ===== */
 function startSpel(){
 
 if(bana.length===0){
@@ -257,14 +272,14 @@ spelUI.style.display="block";
 spelProgress.innerText="Punkt 1 av "+bana.length;
 }
 
-/* VISA SCAN */
+/* ===== VISA SCAN ===== */
 function visaScan(){
 spelUI.style.display="none";
 scan.style.display="block";
 referens.src=bana[steg].bild;
 }
 
-/* START SCAN */
+/* ===== SCAN ===== */
 function startScan(){
 
 navigator.mediaDevices.getUserMedia({
@@ -281,7 +296,7 @@ liveScan();
 });
 }
 
-/* SCAN LOOP */
+/* ===== LOOP ===== */
 function liveScan(){
 
 if(!scanning)return;
@@ -307,7 +322,7 @@ c2.width=100;
 c2.height=100;
 
 ctx2.drawImage(img,0,0,100,100);
-let ref=c2.getContext("2d").getImageData(0,0,100,100).data;
+let ref=ctx2.getImageData(0,0,100,100).data;
 
 let diff=0;
 for(let i=0;i<elev.length;i+=4){
@@ -331,7 +346,7 @@ setTimeout(liveScan,300);
 };
 }
 
-/* VISA FRÅGA */
+/* ===== FRÅGA ===== */
 function visaFraga(){
 scan.style.display="none";
 fragaRuta.style.display="block";
@@ -345,7 +360,7 @@ progressText.innerText =
 fragaText.innerText=f.fraga;
 }
 
-/* SVAR */
+/* ===== SVAR ===== */
 function kollaSvar(){
 
 let f=aktuellKontroll.fragaLista[aktuellFragaIndex];
@@ -379,3 +394,4 @@ svarElev.value="";
 
 </body>
 </html>
+``
