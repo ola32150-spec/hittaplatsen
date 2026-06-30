@@ -14,7 +14,7 @@ html, body {
   text-align: center;
 }
 
-/* KARTA */
+/* 🔴 KARTA */
 #karta {
   position: relative;
 }
@@ -22,7 +22,7 @@ html, body {
   width: 100%;
 }
 
-/* RING */
+/* 📍 KONTROLLER */
 .plats {
   position: absolute;
   width: 20px;
@@ -32,7 +32,7 @@ html, body {
   transform: translate(-50%, -50%);
 }
 
-/* SCAN FÖNSTER */
+/* 📷 SCAN-FÖNSTER */
 .scanBox {
   position: relative;
   width: 90%;
@@ -45,10 +45,9 @@ html, body {
   width: 100%;
   border-radius: 12px;
   background: black;
-  display: block;
 }
 
-/* PROCENT */
+/* 📊 PROCENT */
 #percent {
   position: absolute;
   bottom: 10px;
@@ -58,7 +57,7 @@ html, body {
   font-weight: bold;
 }
 
-/* BUTTON */
+/* 🔘 KNAPPAR */
 button {
   width: 90%;
   max-width: 420px;
@@ -71,8 +70,16 @@ button {
   font-size: 16px;
 }
 
-#editor, #scan {
+/* 🧑‍🏫 LÄRARDEL */
+#editor {
   display: none;
+}
+
+/* 👨‍🎓 ELEV-LÄGE */
+.elev #kartInput,
+.elev #editBtn,
+.elev #editor {
+  display: none !important;
 }
 </style>
 </head>
@@ -82,8 +89,8 @@ button {
 <h2>Kartjakten</h2>
 
 <input type="file" id="kartInput">
-<button onclick="mode='edit'">Redigera</button>
-<button onclick="startSpel()">Spela</button>
+<button id="editBtn" onclick="mode='edit'">Redigera</button>
+<button onclick="startElev()">Spela</button>
 
 <div id="karta">
   <img id="bild">
@@ -116,18 +123,39 @@ button {
 </div>
 
 <script>
-let bana=[], mode="none", tempX, tempY, steg=0, scanning=false;
+let bana=[], mode="none";
+let tempX,tempY;
+let steg=0;
+let scanning=false;
 
-/* KARTA */
+/* ✅ START */
+window.onload = function(){
+
+  let params = new URLSearchParams(window.location.search);
+
+  /* elev-läge */
+  if(params.get("elev") === "1"){
+    document.body.classList.add("elev");
+  }
+
+  /* ladda bana */
+  let data = params.get("bana");
+  if(data){
+    bana = JSON.parse(decodeURIComponent(data));
+    startSpel();
+  }
+};
+
+/* 🗺️ KARTA */
 kartInput.onchange=e=>{
   let r=new FileReader();
   r.onload=ev=>bild.src=ev.target.result;
   r.readAsDataURL(e.target.files[0]);
 };
 
-/* KLICK */
+/* 📍 KLICK */
 karta.onclick=e=>{
-  if(mode!=="edit")return;
+  if(mode!=="edit") return;
 
   let rect=bild.getBoundingClientRect();
   tempX=e.clientX-rect.left;
@@ -142,8 +170,9 @@ karta.onclick=e=>{
   editor.style.display="block";
 };
 
-/* SPARA */
+/* 💾 SPARA */
 function spara(){
+
   let obj={
     top:tempY,
     left:tempX,
@@ -159,17 +188,28 @@ function spara(){
   };
 
   r.readAsDataURL(bildInput.files[0]);
+
   editor.style.display="none";
 }
 
-/* SPEL */
-function startSpel(){
-  steg=0;
-  referens.src=bana[0].bild;
-  scan.style.display="block";
+/* 🎮 START ELEV */
+function startElev(){
+  let data = encodeURIComponent(JSON.stringify(bana));
+  window.location.href = "?elev=1&bana=" + data;
 }
 
-/* START SCAN */
+/* 🎮 SPEL */
+function startSpel(){
+  steg=0;
+  visaKontroll();
+}
+
+function visaKontroll(){
+  referens.src = bana[steg].bild;
+  scan.style.display = "block";
+}
+
+/* 📷 SCAN */
 function startScan(){
   navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}})
   .then(s=>{
@@ -230,7 +270,7 @@ function liveScan(){
       scanning=false;
 
       let data = encodeURIComponent(JSON.stringify(bana[steg]));
-      window.location.href = "fraga.html?data=" + data;
+      window.location.href = "./fraga.html?data=" + data;
 
       return;
     }
