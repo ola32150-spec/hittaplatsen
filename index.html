@@ -13,7 +13,6 @@ body{
   font-family:Arial;
 }
 
-/* KARTA */
 #karta{position:relative;}
 #karta img{
   width:90%;
@@ -22,7 +21,7 @@ body{
   display:block;
 }
 
-/* RING */
+/* PUNKT */
 .plats{
   position:absolute;
   width:20px;
@@ -32,7 +31,7 @@ body{
   transform:translate(-50%,-50%);
 }
 
-/* LABEL */
+/* KNAPPAR */
 label{
   display:block;
   background:#3498db;
@@ -41,6 +40,16 @@ label{
   width:90%;
   max-width:400px;
   border-radius:10px;
+}
+
+button{
+  width:90%;
+  max-width:400px;
+  padding:12px;
+  margin-top:10px;
+  border:none;
+  border-radius:10px;
+  background:#2ecc71;
 }
 
 /* SCAN */
@@ -64,27 +73,23 @@ label{
   transform:translateX(-50%);
 }
 
-/* BUTTON */
-button{
-  width:90%;
-  max-width:400px;
-  padding:12px;
-  margin-top:10px;
-  border:none;
-  border-radius:10px;
-  background:#2ecc71;
+/* FRÅGA */
+#fragaRuta{
+  display:none;
 }
 
-/* PREVIEW */
-#preview{
-  width:90%;
-  max-width:200px;
-  margin:10px auto;
-  display:none;
-  border-radius:10px;
+input{
+  padding:10px;
+  width:80%;
 }
 
 #editor,#scan{display:none;}
+
+#preview{
+  width:200px;
+  margin:10px;
+  display:none;
+}
 </style>
 </head>
 
@@ -102,19 +107,22 @@ button{
   <img id="bild">
 </div>
 
+<p id="antal">Kontroller: 0</p>
+
 <!-- EDITOR -->
 <div id="editor">
 
   <label for="bildInput">📷 Skapa referensbild</label>
   <input type="file" id="bildInput" hidden>
 
-  <!-- ✅ NY PREVIEW -->
   <img id="preview">
 
   <input id="fragaInput" placeholder="Fråga"><br><br>
-  <input id="svarInput" placeholder="Svar"><br><br>
+  <input id="svarInput" placeholder="Svar"><br>
 
-  <button onclick="spara()">Spara kontroll</button>
+  <button onclick="spara()">Spara punkt</button>
+  <button onclick="laggTillFraga()">➕ Lägg till fler frågor</button>
+
 </div>
 
 <!-- SCAN -->
@@ -132,9 +140,22 @@ button{
   <button onclick="startScan()">Scanna</button>
 </div>
 
+<!-- FRÅGA -->
+<div id="fragaRuta">
+  <h3 id="fragaText"></h3>
+  <input id="svarElev"><br><br>
+  <button onclick="kollaSvar()">Svara</button>
+</div>
+
 <script>
 let bana=[],mode="none",tempX,tempY;
 let referensBild=null;
+
+let steg=0;
+let scanning=false;
+
+let aktuellKontroll=null;
+let aktuellFragaIndex=0;
 
 /* KARTA */
 kartInput.onchange=e=>{
@@ -143,25 +164,21 @@ kartInput.onchange=e=>{
   r.readAsDataURL(e.target.files[0]);
 };
 
-/* ✅ VIKTIGT: LADDA REFERENS DIREKT */
+/* REFERENSBILD */
 bildInput.onchange=e=>{
   let file=e.target.files[0];
-  if(!file) return;
 
-  let reader=new FileReader();
-  reader.onload=function(ev){
-
-    referensBild = ev.target.result;
-
-    preview.src = referensBild;
+  let r=new FileReader();
+  r.onload=ev=>{
+    referensBild=ev.target.result;
+    preview.src=referensBild;
     preview.style.display="block";
-
-    console.log("✅ Bild redo");
   };
-  reader.readAsDataURL(file);
+
+  r.readAsDataURL(file);
 };
 
-/* KLICK */
+/* KLICK PÅ KARTA */
 karta.onclick=e=>{
   if(mode!=="edit")return;
 
@@ -178,41 +195,72 @@ karta.onclick=e=>{
   editor.style.display="block";
 };
 
-/* ✅ SPARA (NU FUNKAR ALLTID) */
+/* ✅ SPARA PUNKT */
 function spara(){
 
   if(!referensBild){
-    alert("❗ Välj bild först");
+    alert("Välj bild först");
     return;
   }
 
   let obj={
-    top:tempY,
-    left:tempX,
-    fraga:fragaInput.value,
-    svar:svarInput.value,
-    bild:referensBild
+    top:tempX,
+    left:tempY,
+    bild:referensBild,
+    fragaLista:[]
   };
+
+  obj.fragaLista.push({
+    fraga:fragaInput.value,
+    svar:svarInput.value
+  });
 
   bana.push(obj);
 
-  console.log("✅ Sparad:", obj);
+  antal.innerText="Kontroller: "+bana.length;
 
-  editor.style.display="none";
+  resetEditor();
+}
 
-  preview.style.display="none";
-  referensBild=null;
+/* ✅ LÄGG TILL FLER FRÅGOR */
+function laggTillFraga(){
+
+  if(bana.length===0){
+    alert("Skapa punkt först");
+    return;
+  }
+
+  let sista=bana[bana.length-1];
+
+  sista.fragaLista.push({
+    fraga:fragaInput.value,
+    svar:svarInput.value
+  });
 
   fragaInput.value="";
   svarInput.value="";
+
+  alert("✅ Fråga tillagd");
 }
 
-/* SPEL */
+/* RESET */
+function resetEditor(){
+  editor.style.display="none";
+  fragaInput.value="";
+  svarInput.value="";
+  preview.style.display="none";
+  referensBild=null;
+}
+
+/* START SPEL */
 function startSpel(){
+
   if(bana.length===0){
-    alert("Ingen bana skapad!");
+    alert("Skapa bana först!");
     return;
   }
+
+  steg=0;
   referens.src=bana[0].bild;
   scan.style.display="block";
 }
@@ -222,21 +270,22 @@ function startScan(){
   navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}})
   .then(s=>{
     video.srcObject=s;
+    scanning=true;
     liveScan();
   });
 }
 
+/* SCAN LOOP */
 function liveScan(){
 
-  if(!video.videoWidth){
-    setTimeout(liveScan,300);
-    return;
-  }
+  if(!scanning) return;
 
   let c=document.createElement("canvas");
   let ctx=c.getContext("2d");
 
-  c.width=100; c.height=100;
+  c.width=100;
+  c.height=100;
+
   ctx.drawImage(video,0,0,100,100);
 
   let elev=ctx.getImageData(0,0,100,100).data;
@@ -249,12 +298,15 @@ function liveScan(){
     let c2=document.createElement("canvas");
     let ctx2=c2.getContext("2d");
 
-    c2.width=100; c2.height=100;
+    c2.width=100;
+    c2.height=100;
+
     ctx2.drawImage(img,0,0,100,100);
 
     let ref=ctx2.getImageData(0,0,100,100).data;
 
     let diff=0;
+
     for(let i=0;i<elev.length;i+=4){
       diff+=Math.abs(elev[i]-ref[i]);
       diff+=Math.abs(elev[i+1]-ref[i+1]);
@@ -263,15 +315,68 @@ function liveScan(){
 
     let max=100*100*255*3;
     let p=Math.round((1-diff/max)*100);
+
     percent.innerText=p+"%";
 
     if(p>85){
-      alert("✅ Match!");
+
+      scanning=false;
+
+      aktuellKontroll=bana[steg];
+      aktuellFragaIndex=0;
+
+      visaFraga();
       return;
     }
 
     setTimeout(liveScan,400);
   };
+}
+
+/* ✅ VISA FRÅGA */
+function visaFraga(){
+
+  scan.style.display="none";
+  fragaRuta.style.display="block";
+
+  let f=aktuellKontroll.fragaLista[aktuellFragaIndex];
+  fragaText.innerText=f.fraga;
+}
+
+/* ✅ SVAR */
+function kollaSvar(){
+
+  let f=aktuellKontroll.fragaLista[aktuellFragaIndex];
+
+  if(svarElev.value.toLowerCase()===f.svar.toLowerCase()){
+
+    aktuellFragaIndex++;
+
+    if(aktuellFragaIndex < aktuellKontroll.fragaLista.length){
+
+      visaFraga();
+
+    } else {
+
+      steg++;
+
+      if(steg < bana.length){
+        referens.src=bana[steg].bild;
+        fragaRuta.style.display="none";
+        scan.style.display="block";
+        scanning=true;
+        liveScan();
+      } else {
+        alert("🎉 Klar!");
+      }
+
+    }
+
+  } else {
+    alert("❌ Fel svar");
+  }
+
+  svarElev.value="";
 }
 </script>
 
