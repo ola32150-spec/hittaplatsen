@@ -37,7 +37,7 @@ html, body {
   transform: translate(-50%, -50%);
 }
 
-/* ✅ SNYGGA KNAPP-LABELS */
+/* LABEL SOM KNAPP */
 label {
   display: block;
   width: 90%;
@@ -49,7 +49,7 @@ label {
   cursor: pointer;
 }
 
-/* SCAN FÖNSTER */
+/* SCAN */
 .scanBox {
   position: relative;
   width: 90%;
@@ -105,7 +105,7 @@ button {
 
 <h2>Kartjakten</h2>
 
-<!-- ✅ NY TEXT -->
+<!-- ✅ NY KNAPP -->
 <label for="kartInput">📍 Ladda upp karta</label>
 <input type="file" id="kartInput" style="display:none;">
 
@@ -119,14 +119,13 @@ button {
 <!-- EDITOR -->
 <div id="editor">
 
-  <!-- ✅ NY TEXT -->
   <label for="bildInput">📷 Skapa referensbild</label>
   <input type="file" id="bildInput" style="display:none;"><br><br>
 
   <input id="fragaInput" placeholder="Fråga"><br><br>
   <input id="svarInput" placeholder="Svar"><br><br>
 
-  <button onclick="spara()">Spara</button>
+  <button onclick="spara()">Spara kontroll</button>
 </div>
 
 <!-- SCAN -->
@@ -153,6 +152,8 @@ let tempX,tempY;
 let steg=0;
 let scanning=false;
 
+let bildInput = document.getElementById("bildInput");
+
 /* START */
 window.onload = function(){
 
@@ -169,7 +170,7 @@ window.onload = function(){
   }
 };
 
-/* KARTA */
+/* LADDA KARTA */
 kartInput.onchange=e=>{
   let r=new FileReader();
   r.onload=ev=>bild.src=ev.target.result;
@@ -193,8 +194,13 @@ karta.onclick=e=>{
   editor.style.display="block";
 };
 
-/* SPARA */
+/* ✅ FIXAD SPARA */
 function spara(){
+
+  if(!bildInput.files || !bildInput.files[0]){
+    alert("❗ Välj en referensbild först");
+    return;
+  }
 
   let obj={
     top:tempY,
@@ -204,18 +210,26 @@ function spara(){
     bild:null
   };
 
-  let r=new FileReader();
-  r.onload=e=>{
-    obj.bild=e.target.result;
+  let reader=new FileReader();
+
+  reader.onload=function(e){
+    obj.bild = e.target.result;
+
     bana.push(obj);
+
+    console.log("✅ Sparad kontroll", obj);
   };
 
-  r.readAsDataURL(bildInput.files[0]);
+  reader.readAsDataURL(bildInput.files[0]);
 
   editor.style.display="none";
+
+  fragaInput.value="";
+  svarInput.value="";
+  bildInput.value="";
 }
 
-/* ELEV */
+/* START ELEV */
 function startElev(){
   let data = encodeURIComponent(JSON.stringify(bana));
   window.location.href = "?elev=1&bana=" + data;
