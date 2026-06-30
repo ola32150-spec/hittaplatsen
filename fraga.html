@@ -13,22 +13,24 @@ body{
   font-family:Arial;
 }
 
+/* KARTA */
 #bildWrapper{
   position:relative;
   width:fit-content;
-  margin:10px auto;
+  margin:20px auto;
 }
 
 #bild{
   width:100%;
   max-width:500px;
-  display:block;
+  display:none; /* ✅ viktigt */
 }
 
+/* PUNKTER */
 .plats{
   position:absolute;
-  width:24px;
-  height:24px;
+  width:26px;
+  height:26px;
   border:3px solid red;
   border-radius:50%;
   transform:translate(-50%,-50%);
@@ -40,25 +42,30 @@ body{
   font-size:12px;
 }
 
-/* INPUTS */
+/* INPUT */
 input{
   width:90%;
-  padding:12px;
-  margin:5px;
+  padding:14px;
+  margin:6px;
   border-radius:10px;
 }
 
-/* BUTTONS */
-button,label{
-  padding:12px;
-  margin:5px;
+/* KNAPP */
+button, label{
+  padding:14px;
+  margin:6px auto;
   width:90%;
+  max-width:400px;
   border-radius:10px;
   border:none;
+  display:block;
 }
 
 label{ background:#3498db; }
 button{ background:#2ecc71; }
+
+/* VISNING */
+#editor,#scan,#fragaRuta,#spelUI{display:none;}
 
 /* SCAN */
 .scanBox{
@@ -68,9 +75,7 @@ button{ background:#2ecc71; }
   position:relative;
 }
 
-video,img{
-  width:100%;
-}
+video,img{width:100%;}
 
 #percent{
   position:absolute;
@@ -80,11 +85,6 @@ video,img{
   background:black;
   padding:5px;
 }
-
-/* VISNING */
-#editor,#scan,#fragaRuta,#spelUI{
-  display:none;
-}
 </style>
 </head>
 
@@ -92,21 +92,21 @@ video,img{
 
 <h2>Kartjakten</h2>
 
-<!-- ✅ UPLOAD -->
+<!-- ✅ ENDAST EN KNAPP -->
 <label for="kartInput">📍 Ladda upp karta</label>
-<input type="file" id="kartInput" accept="image/*">
+<input type="file" id="kartInput" accept="image/*" style="display:none;">
 
 <button onclick="mode='edit'">Redigera</button>
 <button onclick="startSpel()">Spela</button>
 
 <div id="bildWrapper">
-  <imgiv>
+  <img id="bild">
+</div>
 
 <p id="antal">Punkter: 0</p>
 
 <!-- ✅ EDITOR -->
 <div id="editor">
-
 <label id="bildLabel" for="bildInput">📷 Skapa referensbild</label>
 <input type="file" id="bildInput">
 
@@ -115,19 +115,17 @@ video,img{
 
 <button onclick="sparaPunkt()">Spara punkt</button>
 <button onclick="laggTillFraga()">➕ Lägg till fråga</button>
-
 </div>
 
-<!-- ✅ SPEL -->
+<!-- SPEL -->
 <div id="spelUI">
-  <h3>Hitta platsen</h3>
-  <p id="spelProgress"></p>
-  <button onclick="visaScan()">Jag är här nu</button>
+<h3>Hitta platsen</h3>
+<p id="spelProgress"></p>
+<button onclick="visaScan()">Jag är här nu</button>
 </div>
 
-<!-- ✅ SCAN -->
+<!-- SCAN -->
 <div id="scan">
-
 <div class="scanBox">
 <img id="referens">
 </div>
@@ -140,7 +138,7 @@ video,img{
 <button onclick="startScan()">Scanna</button>
 </div>
 
-<!-- ✅ FRÅGA -->
+<!-- FRÅGA -->
 <div id="fragaRuta">
 <p id="progressText"></p>
 <h3 id="fragaText"></h3>
@@ -150,6 +148,7 @@ video,img{
 
 <script>
 
+/* DATA */
 let bana=[], mode="none";
 let tempX,tempY;
 let aktuellIndex=null;
@@ -160,7 +159,7 @@ let scanning=false;
 let aktuellKontroll=null;
 let aktuellFragaIndex=0;
 
-/* ✅ FIXAD BILDLADDNING (IPAD-SÄKER) */
+/* ✅ FIX: LADDA KARTA (FUNGERAR PÅ IPAD) */
 document.getElementById("kartInput").addEventListener("change", function(e){
 
   const file = e.target.files[0];
@@ -174,16 +173,15 @@ document.getElementById("kartInput").addEventListener("change", function(e){
 
     img.src = event.target.result;
 
-    img.onload = function(){
-      console.log("✅ Kartbild laddad & synlig");
-    };
+    /* 🔥 viktigt */
+    img.style.display = "block";
 
   };
 
   reader.readAsDataURL(file);
 });
 
-/* ✅ KLICK KARTA */
+/* ✅ KLICKA PÅ KARTA */
 document.getElementById("bild").addEventListener("click", function(e){
 
   if(mode !== "edit") return;
@@ -210,9 +208,9 @@ document.getElementById("bild").addEventListener("click", function(e){
 
 /* REFERENSBILD */
 bildInput.onchange=e=>{
-  let r=new FileReader();
-  r.onload=ev=>referensBild=ev.target.result;
-  r.readAsDataURL(e.target.files[0]);
+let r=new FileReader();
+r.onload=ev=>referensBild=ev.target.result;
+r.readAsDataURL(e.target.files[0]);
 };
 
 /* LABEL */
@@ -226,7 +224,7 @@ function uppdateraBildLabel(){
     text += " till punkt " + (aktuellIndex+1);
   }
 
-  document.getElementById("bildLabel").innerText = text;
+  bildLabel.innerText = text;
 }
 
 /* SPARA */
@@ -242,7 +240,7 @@ function sparaPunkt(){
 
   aktuellIndex = bana.length-1;
 
-  document.getElementById("antal").innerText = "Punkter: " + bana.length;
+  antal.innerText = "Punkter: " + bana.length;
 
   fragaInput.value="";
   svarInput.value="";
@@ -252,6 +250,7 @@ function sparaPunkt(){
 
 /* EXTRA FRÅGA */
 function laggTillFraga(){
+
   if(aktuellIndex===null){
     alert("Skapa punkt först");
     return;
@@ -277,26 +276,28 @@ function startSpel(){
   mode="play";
 
   document.getElementById("editor").style.display="none";
-  document.getElementById("kartInput").style.display="none";
+  document.getElementById("karteInput")?.style?.display="none";
 
   steg=0;
 
-  document.getElementById("spelUI").style.display="block";
+  spelUI.style.display="block";
   spelProgress.innerText="Punkt 1 av "+bana.length;
 }
 
 /* VISA SCAN */
 function visaScan(){
-  document.getElementById("spelUI").style.display="none";
-  document.getElementById("scan").style.display="block";
+  spelUI.style.display="none";
+  scan.style.display="block";
   referens.src=bana[steg].bild;
 }
 
 /* SCAN */
 function startScan(){
+
   navigator.mediaDevices.getUserMedia({
     video:{facingMode:"environment"}
-  }).then(stream=>{
+  })
+  .then(stream=>{
     video.srcObject=stream;
 
     video.onloadedmetadata=()=>{
@@ -360,12 +361,12 @@ function liveScan(){
 /* FRÅGA */
 function visaFraga(){
 
-  document.getElementById("scan").style.display="none";
-  document.getElementById("fragaRuta").style.display="block";
+  scan.style.display="none";
+  fragaRuta.style.display="block";
 
   let f=aktuellKontroll.fragaLista[aktuellFragaIndex];
 
-  progressText.innerText=
+  progressText.innerText =
     "Punkt "+(steg+1)+" av "+bana.length+
     " • Fråga "+(aktuellFragaIndex+1)+" av "+aktuellKontroll.fragaLista.length;
 
@@ -402,7 +403,6 @@ function kollaSvar(){
 
   svarElev.value="";
 }
-
 </script>
 
 </body>
