@@ -140,7 +140,6 @@ let mode="none";
 let tempX,tempY;
 
 let referensBild=null;
-
 let aktuellPunktIndex=null;
 
 let steg=0;
@@ -156,7 +155,7 @@ kartInput.onchange=e=>{
   r.readAsDataURL(e.target.files[0]);
 };
 
-/* REFERENS */
+/* REFERENSBILD */
 bildInput.onchange=e=>{
   let file=e.target.files[0];
 
@@ -170,7 +169,7 @@ bildInput.onchange=e=>{
   r.readAsDataURL(file);
 };
 
-/* KLICK */
+/* KLICK PÅ KARTA */
 karta.onclick=e=>{
   if(mode!=="edit")return;
 
@@ -185,12 +184,15 @@ karta.onclick=e=>{
 
   karta.appendChild(p);
 
-  aktuellPunktIndex=null; /* ny punkt */
+  /* ✅ NY PUNKT → reset */
+  aktuellPunktIndex=null;
+  referensBild=null;
+  preview.style.display="none";
 
   editor.style.display="block";
 };
 
-/* ✅ SPARA NY PUNKT */
+/* ✅ SPARA PUNKT (STÄNGER EJ EDITOR) */
 function sparaPunkt(){
 
   if(!referensBild){
@@ -212,18 +214,27 @@ function sparaPunkt(){
 
   bana.push(obj);
 
-  aktuellPunktIndex=bana.length-1;
+  aktuellPunktIndex = bana.length - 1;
 
   antal.innerText="Kontroller: "+bana.length;
 
-  resetEditor();
+  /* ✅ töm bara fälten */
+  fragaInput.value="";
+  svarInput.value="";
+
+  alert("✅ Punkt skapad – lägg till fler frågor!");
 }
 
-/* ✅ LÄGG TILL FRÅGA PÅ SAMMA PUNKT */
+/* ✅ LÄGG TILL FLERA FRÅGOR */
 function laggTillFraga(){
 
   if(aktuellPunktIndex === null){
     alert("Skapa punkt först!");
+    return;
+  }
+
+  if(!fragaInput.value || !svarInput.value){
+    alert("Skriv fråga och svar först!");
     return;
   }
 
@@ -237,16 +248,7 @@ function laggTillFraga(){
   fragaInput.value="";
   svarInput.value="";
 
-  alert("✅ Fråga tillagd");
-}
-
-/* RESET */
-function resetEditor(){
-  editor.style.display="none";
-  preview.style.display="none";
-  fragaInput.value="";
-  svarInput.value="";
-  referensBild=null;
+  alert("✅ Fråga tillagd på samma punkt");
 }
 
 /* START SPEL */
@@ -272,7 +274,7 @@ function startScan(){
   });
 }
 
-/* SCAN */
+/* SCAN LOOP */
 function liveScan(){
 
   if(!scanning)return;
@@ -332,7 +334,6 @@ function liveScan(){
 
 /* VISA FRÅGA */
 function visaFraga(){
-
   scan.style.display="none";
   fragaRuta.style.display="block";
 
@@ -350,9 +351,7 @@ function kollaSvar(){
     aktuellFragaIndex++;
 
     if(aktuellFragaIndex < aktuellKontroll.fragaLista.length){
-
       visaFraga();
-
     } else {
 
       steg++;
