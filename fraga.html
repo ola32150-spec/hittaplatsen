@@ -2,60 +2,378 @@
 <html lang="sv">
 <head>
 <meta charset="UTF-8">
+<title>Kartjakten</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-body {
+body{
+  background:#000;
+  color:white;
+  text-align:center;
+  font-family:Arial;
+}
+
+#bildWrapper{
+  position:relative;
+  width:fit-content;
+  margin:10px auto;
+}
+
+#bild{
+  width:100%;
+  max-width:500px;
+}
+
+.plats{
+  position:absolute;
+  width:24px;
+  height:24px;
+  border:3px solid red;
+  border-radius:50%;
+  transform:translate(-50%,-50%);
+  display:flex;
+  align-items:center;
+  justify-content:center;
   background:black;
   color:white;
-  font-family:Arial;
-  text-align:center;
+  font-size:12px;
 }
 
-.box {
+input{
   width:90%;
-  max-width:400px;
-  margin:60px auto;
+  padding:12px;
+  margin:5px;
+  border-radius:10px;
 }
 
-input, button {
-  width:100%;
+button,label{
   padding:12px;
-  margin-top:10px;
+  margin:5px;
+  width:90%;
+  border-radius:10px;
+  border:none;
 }
+
+label{background:#3498db;}
+button{background:#2ecc71;}
+
+.scanBox{
+  width:90%;
+  max-width:300px;
+  margin:10px auto;
+  position:relative;
+}
+
+video,img{width:100%;}
+
+#percent{
+  position:absolute;
+  bottom:10px;
+  left:50%;
+  transform:translateX(-50%);
+  background:black;
+  padding:5px;
+}
+
+#scan,#fragaRuta,#spelUI,#editor{display:none;}
 </style>
 </head>
 
 <body>
 
-<div class="box">
+<h2>Kartjakten</h2>
 
-  <h2 id="fraga"></h2>
+<label for="kartInput">📍 Ladda upp karta</label>
+<input type="file" id="kartInput" accept="image/*">
 
-  <input id="svar" placeholder="Skriv svar">
+<button onclick="mode='edit'">Redigera</button>
+<button onclick="startSpel()">Spela</button>
 
-  <button onclick="kolla()">Svara</button>
+<div id="bildWrapper">
+  <img id="bild">
+</div>
 
-  <p id="feedback"></p>
+<p id="antal">Punkter: 0</p>
+
+<!-- ✅ EDITOR -->
+<div id="editor">
+
+<label id="bildLabel" for="bildInput">📷 Skapa referensbild</label>
+<input type="file" id="bildInput">
+
+<input id="fragaInput" placeholder="Fråga">
+<input id="svarInput" placeholder="Svar">
+
+<button onclick="sparaPunkt()">Spara punkt</button>
+<button onclick="laggTillFraga()">➕ Lägg till fråga</button>
 
 </div>
 
+<!-- ✅ SPEL -->
+<div id="spelUI">
+  <h3>Hitta platsen</h3>
+  <p id="spelProgress"></p>
+  <button onclick="visaScan()">Jag är här nu</button>
+</div>
+
+<!-- ✅ SCAN -->
+<div id="scan">
+
+<div class="scanBox">
+<img id="referens">
+</div>
+
+<div class="scanBox">
+<video id="video" autoplay playsinline></video>
+<div id="percent">0%</div>
+</div>
+
+<button onclick="startScan()">Scanna</button>
+</div>
+
+<!-- ✅ FRÅGA -->
+<div id="fragaRuta">
+<p id="progressText"></p>
+<h3 id="fragaText"></h3>
+<input id="svarElev">
+<button onclick="kollaSvar()">Svara</button>
+</div>
+
 <script>
-let params = new URLSearchParams(window.location.search);
-let data = JSON.parse(decodeURIComponent(params.get("data")));
+let bana=[], mode="none";
+let tempX,tempY;
+let aktuellIndex=null;
+let referensBild=null;
 
-document.getElementById("fraga").innerText = data.fraga;
+let steg=0;
+let scanning=false;
 
-function kolla(){
+let aktuellKontroll=null;
+let aktuellFragaIndex=0;
 
-  let svar = document.getElementById("svar").value.toLowerCase();
+/* LADDA KARTA */
+kartInput.onchange=e=>{
+let r=new FileReader();
+r.onload=ev=>bild.src=ev.target.result;
+r.readAsDataURL(e.target.files[0]);
+};
 
-  if(svar === data.svar.toLowerCase()){
-    alert("✅ Rätt!");
-    window.history.back();
-  } else {
-    feedback.innerText = "❌ Fel svar";
-  }
+/* KLICK KARTA */
+bild.onclick=e=>{
+if(mode!=="edit") return;
+
+let rect=bild.getBoundingClientRect();
+tempX=e.clientX-rect.left;
+tempY=e.clientY-rect.top;
+
+let p=document.createElement("div");
+p.className="plats";
+p.style.left=tempX+"px";
+p.style.top=tempY+"px";
+p.innerText=bana.length+1;
+
+bildWrapper.appendChild(p);
+
+editor.style.display="block";
+aktuellIndex=null;
+
+uppdateraBildLabel();
+};
+
+/* REFERENS */
+bildInput.onchange=e=>{
+let r=new FileReader();
+r.onload=ev=>referensBild=ev.target.result;
+r.readAsDataURL(e.target.files[0]);
+};
+
+/* DYNAMISK TEXT */
+function uppdateraBildLabel(){
+let text="📷 Skapa referensbild";
+
+if(aktuellIndex===null){
+text+=" till punkt "+(bana.length+1);
+}else{
+text+=" till punkt "+(aktuellIndex+1);
+}
+
+bildLabel.innerText=text;
+}
+
+/* SPARA */
+function sparaPunkt(){
+
+bana.push({
+bild:referensBild,
+fragaLista:[{
+fraga:fragaInput.value,
+svar:svarInput.value
+}]
+});
+
+aktuellIndex=bana.length-1;
+
+antal.innerText="Punkter: "+bana.length;
+
+fragaInput.value="";
+svarInput.value="";
+
+uppdateraBildLabel();
+}
+
+/* LÄGG FRÅGA */
+function laggTillFraga(){
+
+if(aktuellIndex===null){
+alert("Skapa punkt först");
+return;
+}
+
+bana[aktuellIndex].fragaLista.push({
+fraga:fragaInput.value,
+svar:svarInput.value
+});
+
+fragaInput.value="";
+svarInput.value="";
+}
+
+/* START SPEL */
+function startSpel(){
+
+if(bana.length===0){
+alert("Skapa bana först!");
+return;
+}
+
+mode="play";
+
+editor.style.display="none";
+kartInput.style.display="none";
+
+steg=0;
+
+spelUI.style.display="block";
+spelProgress.innerText="Punkt 1 av "+bana.length;
+}
+
+/* VISA SCAN */
+function visaScan(){
+spelUI.style.display="none";
+scan.style.display="block";
+referens.src=bana[steg].bild;
+}
+
+/* START SCAN */
+function startScan(){
+
+navigator.mediaDevices.getUserMedia({
+video:{facingMode:"environment"}
+})
+.then(s=>{
+video.srcObject=s;
+
+video.onloadedmetadata=()=>{
+video.play();
+scanning=true;
+liveScan();
+};
+});
+}
+
+/* SCAN LOOP */
+function liveScan(){
+
+if(!scanning)return;
+
+let c=document.createElement("canvas");
+let ctx=c.getContext("2d");
+
+c.width=100;
+c.height=100;
+
+ctx.drawImage(video,0,0,100,100);
+let elev=ctx.getImageData(0,0,100,100).data;
+
+let img=new Image();
+img.src=referens.src;
+
+img.onload=()=>{
+
+let c2=document.createElement("canvas");
+let ctx2=c2.getContext("2d");
+
+c2.width=100;
+c2.height=100;
+
+ctx2.drawImage(img,0,0,100,100);
+let ref=c2.getContext("2d").getImageData(0,0,100,100).data;
+
+let diff=0;
+for(let i=0;i<elev.length;i+=4){
+diff+=Math.abs(elev[i]-ref[i]);
+}
+
+let max=100*100*255;
+let p=Math.round((1-diff/max)*100);
+
+percent.innerText=p+"%";
+
+if(p>85){
+scanning=false;
+aktuellKontroll=bana[steg];
+aktuellFragaIndex=0;
+visaFraga();
+return;
+}
+
+setTimeout(liveScan,300);
+};
+}
+
+/* VISA FRÅGA */
+function visaFraga(){
+scan.style.display="none";
+fragaRuta.style.display="block";
+
+let f=aktuellKontroll.fragaLista[aktuellFragaIndex];
+
+progressText.innerText =
+"Punkt "+(steg+1)+" av "+bana.length+
+" • Fråga "+(aktuellFragaIndex+1)+" av "+aktuellKontroll.fragaLista.length;
+
+fragaText.innerText=f.fraga;
+}
+
+/* SVAR */
+function kollaSvar(){
+
+let f=aktuellKontroll.fragaLista[aktuellFragaIndex];
+
+if(svarElev.value.toLowerCase()===f.svar.toLowerCase()){
+
+aktuellFragaIndex++;
+
+if(aktuellFragaIndex < aktuellKontroll.fragaLista.length){
+visaFraga();
+}else{
+
+steg++;
+
+if(steg < bana.length){
+fragaRuta.style.display="none";
+spelUI.style.display="block";
+spelProgress.innerText="Punkt "+(steg+1)+" av "+bana.length;
+}else{
+alert("🎉 Klar!");
+}
+}
+
+}else{
+alert("❌ Fel svar");
+}
+
+svarElev.value="";
 }
 </script>
 
