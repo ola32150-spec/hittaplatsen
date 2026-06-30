@@ -87,6 +87,27 @@ button{ background:#2ecc71; border:none; }
   text-align:left;
 }
 
+/* ✅ FLEX-RAD */
+.rad{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:10px;
+}
+
+.radText{
+  flex:1;
+}
+
+.rad p{
+  margin:4px 0;
+}
+
+.thumb{
+  width:80px;
+  border-radius:8px;
+}
+
 #fragaLista h3{
   margin-top:20px;
 }
@@ -139,20 +160,6 @@ button{ background:#2ecc71; border:none; }
 
 <div id="fragaLista"></div>
 
-<!-- SCAN -->
-<div id="scan">
-<div class="scanBox">
-<img id="referens">
-</div>
-
-<div class="scanBox">
-<video id="video" autoplay playsinline></video>
-<div id="percent">0%</div>
-</div>
-
-<button onclick="startScan()">Scanna</button>
-</div>
-
 <script>
 let bana=[];
 let mode="none";
@@ -193,8 +200,9 @@ bildInput.onchange=e=>{
   r.readAsDataURL(e.target.files[0]);
 };
 
-/* KLICK KARTA */
+/* KLICK */
 bild.onclick=e=>{
+
   if(mode!=="edit") return;
 
   let rect=bild.getBoundingClientRect();
@@ -209,13 +217,14 @@ bild.onclick=e=>{
 
   bildWrapper.appendChild(p);
 
-  editor.style.display="block";
   aktuellPunktIndex=null;
+
+  editor.style.display="block";
 
   uppdateraBildLabel();
 };
 
-/* ✅ NY LISTA – VISAR ALLA PUNKTER */
+/* ✅ VISAR ALLA PUNKTER + BILD TILL HÖGER */
 function visaFragaLista(){
 
   if(bana.length===0){
@@ -228,18 +237,28 @@ function visaFragaLista(){
   bana.forEach((punkt,index)=>{
 
     html+="<h3>Punkt "+(index+1)+"</h3>";
+    html+="<div class='rad'>";
+
+    html+="<div class='radText'>";
 
     punkt.fragaLista.forEach((f,i)=>{
       html+="<p>"+(i+1)+". "+f.fraga+"</p>";
     });
 
-    html+="<hr>";
+    html+="</div>";
+
+    if(punkt.bild){
+      html+="<img src='"+punkt.bild+"' class='thumb'>";
+    }
+
+    html+="</div><hr>";
+
   });
 
   fragaLista.innerHTML=html;
 }
 
-/* SPARA PUNKT */
+/* SPARA */
 function sparaPunkt(){
 
   let obj={
@@ -261,7 +280,7 @@ function sparaPunkt(){
   uppdateraBildLabel();
 }
 
-/* LÄGG TILL FRÅGA */
+/* LÄGG TILL */
 function laggTillFraga(){
 
   if(aktuellPunktIndex===null){
