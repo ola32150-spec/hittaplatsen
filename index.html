@@ -14,14 +14,19 @@ body{
 }
 
 /* KARTA */
+#bildWrapper{
+  position:relative;
+  width:fit-content;
+  margin:10px auto;
+}
+
 #bild{
   width:100%;
   max-width:500px;
-  margin:10px auto;
   display:block;
 }
 
-/* PUNKTER */
+/* PUNKT */
 .plats{
   position:absolute;
   width:24px;
@@ -33,6 +38,8 @@ body{
   align-items:center;
   justify-content:center;
   background:rgba(0,0,0,0.6);
+  color:white;
+  font-size:12px;
 }
 
 /* EDITOR */
@@ -51,13 +58,18 @@ input{
 }
 
 /* KNAPPAR */
-button{
+button, label{
   padding:12px;
-  margin:5px;
   border:none;
   border-radius:10px;
-  background:#2ecc71;
+  margin:5px auto;
+  display:block;
+  width:90%;
+  max-width:400px;
 }
+
+label{ background:#3498db; }
+button{ background:#2ecc71; }
 
 /* SCAN */
 .scanBox{
@@ -88,14 +100,14 @@ video, img{
 
 <h2>Kartjakten</h2>
 
-<!-- ✅ UPLOAD -->
+<!-- ✅ KARTA -->
+<label for="kartInput">📍 Ladda upp karta</label>
 <input type="file" id="kartInput" accept="image/*">
 
 <button onclick="mode='edit'">Redigera</button>
 <button onclick="startSpel()">Spela</button>
 
-<!-- ✅ KARTA -->
-<div style="position:relative;">
+<div id="bildWrapper">
   <img id="bild">
 </div>
 
@@ -104,18 +116,21 @@ video, img{
 <!-- ✅ EDITOR -->
 <div id="editor">
 
+<label id="bildLabel" for="bildInput">📷 Skapa referensbild</label>
 <input type="file" id="bildInput">
+
 <input id="fragaInput" placeholder="Fråga">
 <input id="svarInput" placeholder="Svar">
 
 <button onclick="sparaPunkt()">Spara punkt</button>
-<button onclick="laggTillFraga()">➕ Lägg fråga</button>
+<button onclick="laggTillFraga()">➕ Lägg till fråga</button>
 
 </div>
 
-<!-- ✅ SPEL UI -->
+<!-- ✅ SPEL -->
 <div id="spelUI">
   <h3>Hitta platsen</h3>
+  <p>Gå till rätt plats på kartan</p>
   <button onclick="visaScan()">Jag är här nu</button>
 </div>
 
@@ -141,24 +156,30 @@ video, img{
 </div>
 
 <script>
-let bana=[];
-let mode="none";
+let bana=[], mode="none";
 let tempX,tempY;
 let aktuellIndex=null;
+let referensBild=null;
 
 let steg=0;
 let scanning=false;
+
 let aktuellKontroll=null;
 let aktuellFragaIndex=0;
 
-/* ✅ LADDA KARTA */
+/* ✅ Ladda karta */
 kartInput.onchange=e=>{
+  let file=e.target.files[0];
+  if(!file) return;
+
   let r=new FileReader();
-  r.onload=ev=>bild.src=ev.target.result;
-  r.readAsDataURL(e.target.files[0]);
+  r.onload=ev=>{
+    bild.src=ev.target.result;
+  };
+  r.readAsDataURL(file);
 };
 
-/* ✅ KLICK KARTA */
+/* ✅ Klick karta */
 bild.onclick=e=>{
   if(mode!=="edit") return;
 
@@ -172,20 +193,36 @@ bild.onclick=e=>{
   p.style.top=tempY+"px";
   p.innerText=bana.length+1;
 
-  document.querySelector("div").appendChild(p);
+  bildWrapper.appendChild(p);
 
   editor.style.display="block";
   aktuellIndex=null;
+  uppdateraBildLabel();
 };
 
-/* ✅ REFERENSBILD */
+/* ✅ Referensbild */
 bildInput.onchange=e=>{
   let r=new FileReader();
-  r.onload=ev=>window.referensBild=ev.target.result;
+  r.onload=ev=>{
+    referensBild=ev.target.result;
+  };
   r.readAsDataURL(e.target.files[0]);
 };
 
-/* ✅ SPARA */
+/* ✅ Dynamisk label */
+function uppdateraBildLabel(){
+  let text="📷 Skapa referensbild";
+
+  if(aktuellIndex===null){
+    text+=" till punkt "+(bana.length+1);
+  } else {
+    text+=" till punkt "+(aktuellIndex+1);
+  }
+
+  bildLabel.innerText=text;
+}
+
+/* ✅ Spara punkt */
 function sparaPunkt(){
 
   bana.push({
@@ -199,20 +236,33 @@ function sparaPunkt(){
   aktuellIndex=bana.length-1;
 
   antal.innerText="Punkter: "+bana.length;
+
+  fragaInput.value="";
+  svarInput.value="";
+
+  uppdateraBildLabel();
 }
 
-/* ✅ NY FRÅGA */
+/* ✅ Lägg fråga */
 function laggTillFraga(){
 
-  if(aktuellIndex===null) return;
+  if(aktuellIndex===null){
+    alert("Skapa punkt först");
+    return;
+  }
 
   bana[aktuellIndex].fragaLista.push({
     fraga:fragaInput.value,
     svar:svarInput.value
   });
+
+  fragaInput.value="";
+  svarInput.value="";
+
+  uppdateraBildLabel();
 }
 
-/* ✅ SPEL */
+/* ✅ Spel */
 function startSpel(){
 
   if(bana.length===0){
@@ -230,16 +280,15 @@ function startSpel(){
   spelUI.style.display="block";
 }
 
-/* ✅ VISA SCAN */
+/* ✅ Visa scan */
 function visaScan(){
-
   spelUI.style.display="none";
   scan.style.display="block";
 
   referens.src=bana[steg].bild;
 }
 
-/* ✅ START SCAN */
+/* ✅ Scan */
 function startScan(){
 
   navigator.mediaDevices.getUserMedia({
@@ -256,7 +305,7 @@ function startScan(){
   });
 }
 
-/* ✅ SCAN LOOP */
+/* ✅ Scan loop */
 function liveScan(){
 
   if(!scanning) return;
@@ -310,7 +359,7 @@ function liveScan(){
   };
 }
 
-/* ✅ VISA FRÅGA */
+/* ✅ Visa fråga */
 function visaFraga(){
 
   scan.style.display="none";
@@ -320,7 +369,7 @@ function visaFraga(){
   fragaText.innerText=f.fraga;
 }
 
-/* ✅ SVAR */
+/* ✅ Svar */
 function kollaSvar(){
 
   steg++;
@@ -328,10 +377,9 @@ function kollaSvar(){
   if(steg < bana.length){
     fragaRuta.style.display="none";
     spelUI.style.display="block";
-  }else{
+  } else {
     alert("🎉 Klar!");
   }
-
 }
 </script>
 
