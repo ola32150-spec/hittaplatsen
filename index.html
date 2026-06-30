@@ -32,7 +32,7 @@ html, body {
   transform: translate(-50%, -50%);
 }
 
-/* ✅ LIKA STORA SCAN-FÖNSTER */
+/* SCAN FÖNSTER */
 .scanBox {
   position: relative;
   width: 90%;
@@ -40,7 +40,6 @@ html, body {
   margin: 20px auto;
 }
 
-/* MEDIA */
 .scanBox img,
 .scanBox video {
   width: 100%;
@@ -72,7 +71,7 @@ button {
   font-size: 16px;
 }
 
-#editor, #scan, #fragaRuta {
+#editor, #scan {
   display: none;
 }
 </style>
@@ -98,17 +97,15 @@ button {
   <button onclick="spara()">Spara</button>
 </div>
 
-<!-- ✅ SCAN FIXAD -->
+<!-- SCAN -->
 <div id="scan">
 
   <h3>📸 Rikta kameran</h3>
 
-  <!-- REFERENS -->
   <div class="scanBox">
     <img id="referens">
   </div>
 
-  <!-- KAMERA -->
   <div class="scanBox">
     <video id="video" autoplay></video>
     <div id="percent">0%</div>
@@ -116,13 +113,6 @@ button {
 
   <button onclick="startScan()">Scanna</button>
 
-</div>
-
-<!-- FRÅGA -->
-<div id="fragaRuta">
-  <h3 id="fragaText"></h3>
-  <input id="svarElever"><br><br>
-  <button onclick="svara()">Svara</button>
 </div>
 
 <script>
@@ -135,7 +125,7 @@ kartInput.onchange=e=>{
   r.readAsDataURL(e.target.files[0]);
 };
 
-/* ✅ KLICK FIX */
+/* KLICK */
 karta.onclick=e=>{
   if(mode!=="edit")return;
 
@@ -179,7 +169,7 @@ function startSpel(){
   scan.style.display="block";
 }
 
-/* SCAN START */
+/* START SCAN */
 function startScan(){
   navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}})
   .then(s=>{
@@ -189,7 +179,7 @@ function startScan(){
   });
 }
 
-/* ✅ STABIL LIVE SCAN */
+/* ✅ MATCH → NY SIDA */
 function liveScan(){
 
   if(!scanning) return;
@@ -236,27 +226,17 @@ function liveScan(){
     percent.innerText=p+"%";
 
     if(p>85){
+
       scanning=false;
-      alert("✅ Match "+p+"%");
-      scan.style.display="none";
-      fragaRuta.style.display="block";
-      fragaText.innerText=bana[steg].fraga;
+
+      let data = encodeURIComponent(JSON.stringify(bana[steg]));
+      window.location.href = "fraga.html?data=" + data;
+
       return;
     }
 
     setTimeout(liveScan,400);
   };
-}
-
-/* SVAR */
-function svara(){
-  steg++;
-  if(steg<bana.length){
-    referens.src=bana[steg].bild;
-    scan.style.display="block";
-  } else {
-    alert("🎉 Klar!");
-  }
 }
 </script>
 
