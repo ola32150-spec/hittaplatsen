@@ -12,7 +12,7 @@ body{
   font-family:Arial;
 }
 
-/* ✅ SPEL-LAYOUT */
+/* SPEL-LAYOUT */
 #spelContainer{
   display:flex;
   justify-content:center;
@@ -21,7 +21,6 @@ body{
   flex-wrap:wrap;
 }
 
-/* KARTA */
 #bildWrapper{
   position:relative;
 }
@@ -44,24 +43,30 @@ body{
   background:rgba(0,0,0,0.6);
 }
 
-/* ✅ INFO BOX */
+/* INFO */
 #infoBox{
   max-width:200px;
   text-align:left;
 }
 
-#infoBox h3{
-  margin-top:0;
-}
-
-/* KNAPP */
+/* KNAPPAR */
 button{
   padding:12px;
   border:none;
   border-radius:10px;
   background:#2ecc71;
-  margin-top:10px;
   width:100%;
+  margin-top:10px;
+}
+
+label{
+  display:block;
+  background:#3498db;
+  padding:12px;
+  border-radius:10px;
+  width:90%;
+  max-width:400px;
+  margin:10px auto;
 }
 
 /* SCAN */
@@ -69,10 +74,21 @@ button{
   width:90%;
   max-width:300px;
   margin:10px auto;
+  position:relative;
 }
 
 video, img{
   width:100%;
+}
+
+#percent{
+  position:absolute;
+  bottom:10px;
+  left:50%;
+  transform:translateX(-50%);
+  background:rgba(0,0,0,0.6);
+  padding:6px 10px;
+  border-radius:10px;
 }
 
 /* GÖM */
@@ -84,20 +100,23 @@ video, img{
 
 <h2>Kartjakten</h2>
 
+<!-- ✅ NY: LADDNING AV KARTA -->
+<label id="kartLabel" for="kartInput">📍 Ladda upp karta</label>
+<input type="file" id="kartInput" hidden>
+
 <button id="editBtn" onclick="mode='edit'">Redigera</button>
 <button id="playBtn" onclick="startSpel()">Spela</button>
 
-<!-- ✅ SPEL -->
+<!-- SPEL -->
 <div id="spelUI">
 
 <div id="spelContainer">
 
-  <!-- KARTA -->
   <div id="bildWrapper">
     <img id="bild">
   </div>
 
-  <!-- ✅ INFO -->
+  <!-- INFO -->
   <div id="infoBox">
     <h3>Hitta platsen</h3>
     <p>Gå till rätt plats på kartan.</p>
@@ -141,6 +160,16 @@ let scanning=false;
 let aktuellKontroll=null;
 let aktuellFragaIndex=0;
 
+let kartInput=document.getElementById("kartInput");
+let bild=document.getElementById("bild");
+
+/* ✅ LADDA KARTA */
+kartInput.onchange=e=>{
+  let r=new FileReader();
+  r.onload=ev=>bild.src=ev.target.result;
+  r.readAsDataURL(e.target.files[0]);
+};
+
 /* SPEL */
 function startSpel(){
 
@@ -151,6 +180,8 @@ function startSpel(){
 
   mode="play";
 
+  /* ✅ GÖM UPLOAD + KNAPPAR */
+  kartLabel.style.display="none";
   editBtn.style.display="none";
   playBtn.style.display="none";
 
@@ -160,9 +191,8 @@ function startSpel(){
   bild.src=bana[0].bild;
 }
 
-/* ✅ VISA SCAN */
+/* VISA SCAN */
 function visaScan(){
-
   spelUI.style.display="none";
   scan.style.display="block";
 
@@ -246,6 +276,7 @@ function liveScan(){
 
 /* FRÅGA */
 function visaFraga(){
+
   scan.style.display="none";
   fragaRuta.style.display="block";
 
@@ -254,6 +285,7 @@ function visaFraga(){
 }
 
 function kollaSvar(){
+
   steg++;
 
   if(steg < bana.length){
