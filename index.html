@@ -7,85 +7,73 @@
 
 <style>
 html, body {
-  margin:0;
-  background:#000;
-  color:white;
-  font-family:Arial;
-  text-align:center;
+  margin: 0;
+  background: #000;
+  color: white;
+  font-family: Arial;
+  text-align: center;
 }
 
-/* ✅ KARTA FIX */
+/* KARTA */
 #karta {
-  position:relative;
+  position: relative;
 }
 #karta img {
-  width:100%;
+  width: 100%;
 }
 
-/* ✅ RING */
+/* RING */
 .plats {
-  position:absolute;
-  width:20px;
-  height:20px;
-  border:3px solid red;
-  border-radius:50%;
-  transform:translate(-50%,-50%);
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 3px solid red;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
 }
 
-/* ✅ FÖNSTER */
-.card {
-  width:85%;
-  max-width:400px;
-  margin:20px auto;
+/* ✅ LIKA STORA SCAN-FÖNSTER */
+.scanBox {
+  position: relative;
+  width: 90%;
+  max-width: 420px;
+  margin: 20px auto;
 }
 
-/* ✅ VIDEO WRAPPER */
-.cameraBox{
-  position:relative;
+/* MEDIA */
+.scanBox img,
+.scanBox video {
+  width: 100%;
+  border-radius: 12px;
+  background: black;
+  display: block;
 }
 
-/* VIDEO */
-video{
-  width:100%;
-  border-radius:10px;
-}
-
-/* ✅ SIKTE */
-#target{
-  position:absolute;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%);
-  width:120px;
-  height:120px;
-  border:4px solid red;
-  border-radius:10px;
-}
-
-/* ✅ PROCENT */
-#percent{
-  position:absolute;
-  bottom:10px;
-  left:50%;
-  transform:translateX(-50%);
-  font-size:22px;
+/* PROCENT */
+#percent {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 22px;
+  font-weight: bold;
 }
 
 /* BUTTON */
-button{
-  width:85%;
-  max-width:400px;
-  padding:12px;
-  margin-top:10px;
-  background:#2ecc71;
-  border:none;
-  border-radius:10px;
-  color:white;
-  font-size:16px;
+button {
+  width: 90%;
+  max-width: 420px;
+  padding: 12px;
+  margin-top: 10px;
+  background: #2ecc71;
+  border: none;
+  border-radius: 10px;
+  color: white;
+  font-size: 16px;
 }
 
-#editor,#scan,#fragaRuta{
-  display:none;
+#editor, #scan, #fragaRuta {
+  display: none;
 }
 </style>
 </head>
@@ -103,40 +91,42 @@ button{
 </div>
 
 <!-- EDITOR -->
-<div id="editor" class="card">
+<div id="editor">
   <input type="file" id="bildInput"><br><br>
   <input id="fragaInput" placeholder="Fråga"><br><br>
   <input id="svarInput" placeholder="Svar"><br><br>
   <button onclick="spara()">Spara</button>
 </div>
 
-<!-- SCAN -->
+<!-- ✅ SCAN FIXAD -->
 <div id="scan">
 
-  <h3>Rikta kameran</h3>
+  <h3>📸 Rikta kameran</h3>
 
-  <div class="card">
+  <!-- REFERENS -->
+  <div class="scanBox">
     <img id="referens">
   </div>
 
-  <div class="card cameraBox">
+  <!-- KAMERA -->
+  <div class="scanBox">
     <video id="video" autoplay></video>
-    <div id="target"></div>
     <div id="percent">0%</div>
   </div>
 
   <button onclick="startScan()">Scanna</button>
+
 </div>
 
 <!-- FRÅGA -->
-<div id="fragaRuta" class="card">
+<div id="fragaRuta">
   <h3 id="fragaText"></h3>
   <input id="svarElever"><br><br>
   <button onclick="svara()">Svara</button>
 </div>
 
 <script>
-let bana=[],mode="none",tempX,tempY,steg=0,scanning=false;
+let bana=[], mode="none", tempX, tempY, steg=0, scanning=false;
 
 /* KARTA */
 kartInput.onchange=e=>{
@@ -145,7 +135,7 @@ kartInput.onchange=e=>{
   r.readAsDataURL(e.target.files[0]);
 };
 
-/* ✅ FIX KLICK */
+/* ✅ KLICK FIX */
 karta.onclick=e=>{
   if(mode!=="edit")return;
 
@@ -189,7 +179,7 @@ function startSpel(){
   scan.style.display="block";
 }
 
-/* START SCAN */
+/* SCAN START */
 function startScan(){
   navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}})
   .then(s=>{
@@ -199,7 +189,7 @@ function startScan(){
   });
 }
 
-/* ✅ STABIL SCAN */
+/* ✅ STABIL LIVE SCAN */
 function liveScan(){
 
   if(!scanning) return;
@@ -245,11 +235,6 @@ function liveScan(){
 
     percent.innerText=p+"%";
 
-    /* färg */
-    if(p<70) target.style.borderColor="red";
-    else if(p<90) target.style.borderColor="yellow";
-    else target.style.borderColor="lime";
-
     if(p>90){
       scanning=false;
       alert("✅ Match "+p+"%");
@@ -270,7 +255,7 @@ function svara(){
     referens.src=bana[steg].bild;
     scan.style.display="block";
   } else {
-    alert("Klar!");
+    alert("🎉 Klar!");
   }
 }
 </script>
