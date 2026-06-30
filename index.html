@@ -42,7 +42,7 @@ body{
   background:rgba(0,0,0,0.6);
 }
 
-/* ✅ MOBIL EDITOR */
+/* EDITOR */
 #editor{
   width:95%;
   max-width:500px;
@@ -52,23 +52,19 @@ body{
   gap:12px;
 }
 
-/* INPUTS */
 input{
   width:100%;
   padding:14px;
   font-size:16px;
   border-radius:10px;
   border:none;
-  box-sizing:border-box;
 }
 
-/* BUTTON + LABEL */
 button, label{
   width:100%;
   padding:14px;
   font-size:16px;
   border-radius:10px;
-  margin:5px auto;
 }
 
 label{ background:#3498db; }
@@ -105,25 +101,32 @@ button{ background:#2ecc71; border:none; }
   border-radius:8px;
 }
 
-.rad p{
-  margin:4px 0;
-}
-
 /* SCAN */
 .scanBox{
   width:95%;
   max-width:420px;
   margin:20px auto;
+  position:relative;
 }
 
-.scanBox img,
-.scanBox video{
+.scanBox video,
+.scanBox img{
   width:100%;
   border-radius:12px;
 }
 
-/* VISNING */
-#editor,#scan,#fragaRuta{display:none;}
+#percent{
+  position:absolute;
+  bottom:10px;
+  left:50%;
+  transform:translateX(-50%);
+  font-size:20px;
+  background:rgba(0,0,0,0.6);
+  padding:6px 12px;
+  border-radius:10px;
+}
+
+#editor,#scan{display:none;}
 </style>
 </head>
 
@@ -131,7 +134,7 @@ button{ background:#2ecc71; border:none; }
 
 <h2>Kartjakten</h2>
 
-<label id="kartLabel" for="kartInput">📍 Ladda upp karta</label>
+<label for="kartInput">📍 Ladda upp karta</label>
 <input type="file" id="kartInput" hidden>
 
 <button onclick="mode='edit'">Redigera</button>
@@ -143,10 +146,9 @@ button{ background:#2ecc71; border:none; }
 
 <p id="antal">Punkter: 0</p>
 
-<!-- EDITOR -->
 <div id="editor">
 
-<label id="bildLabel" for="bildInput">📷 Skapa referensbild</label>
+<label for="bildInput" id="bildLabel">📷 Skapa referensbild</label>
 <input type="file" id="bildInput" hidden>
 
 <img id="preview">
@@ -161,42 +163,31 @@ button{ background:#2ecc71; border:none; }
 
 <div id="fragaLista"></div>
 
-<!-- SCAN -->
+<!-- ✅ SCAN -->
 <div id="scan">
-  <div class="scanBox">
-    <img id="referens">
-  </div>
 
-  <div class="scanBox">
-    <video id="video" autoplay playsinline></video>
-  </div>
+<div class="scanBox">
+  <img id="referens">
+</div>
 
-  <button onclick="startScan()">Scanna</button>
+<div class="scanBox">
+  <video id="video" autoplay playsinline></video>
+  <div id="percent">0%</div>
+</div>
+
+<button onclick="startScan()">Scanna</button>
+
 </div>
 
 <script>
-let bana=[];
-let mode="none";
+let bana=[], mode="none";
 let tempX,tempY;
-
-let aktuellPunktIndex=null;
 let referensBild=null;
-
+let aktuellPunktIndex=null;
 let steg=0;
 
 let kartInput=document.getElementById("kartInput");
 let bild=document.getElementById("bild");
-
-/* LABEL */
-function uppdateraBildLabel(){
-  let text="📷 Skapa referensbild";
-  if(aktuellPunktIndex===null){
-    text+=" till punkt "+(bana.length+1);
-  } else {
-    text+=" till punkt "+(aktuellPunktIndex+1);
-  }
-  bildLabel.innerText=text;
-}
 
 /* KARTA */
 kartInput.onchange=e=>{
@@ -233,25 +224,48 @@ bild.onclick=e=>{
   bildWrapper.appendChild(p);
 
   editor.style.display="block";
-  aktuellPunktIndex=null;
-
-  uppdateraBildLabel();
 };
+
+/* SPARA */
+function sparaPunkt(){
+
+  bana.push({
+    bild:referensBild,
+    fragaLista:[{fraga:fragaInput.value}]
+  });
+
+  aktuellPunktIndex=bana.length-1;
+
+  antal.innerText="Punkter: "+bana.length;
+
+  visaFragaLista();
+}
+
+/* LÄGG TILL */
+function laggTillFraga(){
+  if(aktuellPunktIndex===null) return;
+
+  bana[aktuellPunktIndex].fragaLista.push({
+    fraga:fragaInput.value
+  });
+
+  visaFragaLista();
+}
 
 /* LISTA */
 function visaFragaLista(){
 
   let html="";
 
-  bana.forEach((punkt,index)=>{
+  bana.forEach((punkt,i)=>{
 
-    html+="<h3>Punkt "+(index+1)+"</h3>";
-    html+="<div class='rad'>";
+    html+="<h3>Punkt "+(i+1)+"</h3>";
+    html+="<div class='rad'><div>";
 
-    html+="<div>";
-    punkt.fragaLista.forEach((f,i)=>{
-      html+="<p>"+(i+1)+". "+f.fraga+"</p>";
+    punkt.fragaLista.forEach((f,j)=>{
+      html+="<p>"+(j+1)+". "+f.fraga+"</p>";
     });
+
     html+="</div>";
 
     if(punkt.bild){
@@ -264,52 +278,11 @@ function visaFragaLista(){
   fragaLista.innerHTML=html;
 }
 
-/* SPARA */
-function sparaPunkt(){
-
-  let obj={
-    top:tempX,
-    left:tempY,
-    bild:referensBild,
-    fragaLista:[{fraga:fragaInput.value,svar:svarInput.value}]
-  };
-
-  bana.push(obj);
-  aktuellPunktIndex=bana.length-1;
-
-  antal.innerText="Punkter: "+bana.length;
-
-  fragaInput.value="";
-  svarInput.value="";
-
-  visaFragaLista();
-  uppdateraBildLabel();
-}
-
-/* LÄGG TILL */
-function laggTillFraga(){
-
-  if(aktuellPunktIndex===null){
-    alert("Skapa punkt först");
-    return;
-  }
-
-  bana[aktuellPunktIndex].fragaLista.push({
-    fraga:fragaInput.value,
-    svar:svarInput.value
-  });
-
-  fragaInput.value="";
-  svarInput.value="";
-
-  visaFragaLista();
-}
-
 /* SPEL */
 function startSpel(){
 
   if(bana.length===0){
-    alert("Skapa bana först");
+    alert("Skapa bana först!");
     return;
   }
 
@@ -317,25 +290,76 @@ function startSpel(){
 
   editor.style.display="none";
   fragaLista.style.display="none";
-  kartLabel.style.display="none";
 
   steg=0;
-
   referens.src=bana[0].bild;
+
   scan.style.display="block";
 }
 
-/* KAMERA */
+/* ✅ SCAN */
 function startScan(){
+
   navigator.mediaDevices.getUserMedia({
     video:{facingMode:"environment"}
   })
-  .then(s=>{
-    video.srcObject=s;
-  })
-  .catch(()=>{
-    alert("Tillåt kamera");
+  .then(stream=>{
+    video.srcObject=stream;
+
+    video.onloadedmetadata=()=>{
+      video.play();
+      liveScan();
+    };
   });
+}
+
+/* ✅ LIVE SCAN */
+function liveScan(){
+
+  if(!video.videoWidth){
+    setTimeout(liveScan,200);
+    return;
+  }
+
+  let c=document.createElement("canvas");
+  let ctx=c.getContext("2d");
+
+  c.width=100; c.height=100;
+
+  ctx.drawImage(video,0,0,100,100);
+  let elev=ctx.getImageData(0,0,100,100).data;
+
+  let img=new Image();
+  img.src=referens.src;
+
+  img.onload=()=>{
+
+    let c2=document.createElement("canvas");
+    let ctx2=c2.getContext("2d");
+
+    c2.width=100; c2.height=100;
+
+    ctx2.drawImage(img,0,0,100,100);
+    let ref=ctx2.getImageData(0,0,100,100).data;
+
+    let diff=0;
+
+    for(let i=0;i<elev.length;i+=4){
+      diff+=Math.abs(elev[i]-ref[i]);
+    }
+
+    let max=100*100*255;
+    let p=Math.round((1-diff/max)*100);
+
+    percent.innerText=p+"%";
+
+    if(p>85){
+      alert("✅ Match!");
+      return;
+    }
+
+    setTimeout(liveScan,300);
+  };
 }
 </script>
 
