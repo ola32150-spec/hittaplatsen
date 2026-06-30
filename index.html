@@ -74,9 +74,8 @@ button{ background:#2ecc71; border:none; }
 #preview{
   width:100%;
   max-width:250px;
-  margin:10px auto;
-  border-radius:12px;
   display:none;
+  margin:10px auto;
 }
 
 /* LISTA */
@@ -93,7 +92,6 @@ button{ background:#2ecc71; border:none; }
 .rad{
   display:flex;
   justify-content:space-between;
-  gap:10px;
 }
 
 .thumb{
@@ -112,7 +110,6 @@ button{ background:#2ecc71; border:none; }
 .scanBox video,
 .scanBox img{
   width:100%;
-  border-radius:12px;
 }
 
 #percent{
@@ -126,7 +123,7 @@ button{ background:#2ecc71; border:none; }
   border-radius:10px;
 }
 
-#editor,#scan{display:none;}
+#editor,#scan,#fragaRuta{display:none;}
 </style>
 </head>
 
@@ -146,9 +143,10 @@ button{ background:#2ecc71; border:none; }
 
 <p id="antal">Punkter: 0</p>
 
+<!-- EDITOR -->
 <div id="editor">
 
-<label for="bildInput" id="bildLabel">📷 Skapa referensbild</label>
+<label for="bildInput">📷 Skapa referensbild</label>
 <input type="file" id="bildInput" hidden>
 
 <img id="preview">
@@ -163,7 +161,7 @@ button{ background:#2ecc71; border:none; }
 
 <div id="fragaLista"></div>
 
-<!-- ✅ SCAN -->
+<!-- SCAN -->
 <div id="scan">
 
 <div class="scanBox">
@@ -179,15 +177,25 @@ button{ background:#2ecc71; border:none; }
 
 </div>
 
+<!-- FRÅGA -->
+<div id="fragaRuta">
+  <h3 id="fragaText"></h3>
+  <input id="svarElev">
+  <button onclick="kollaSvar()">Svara</button>
+</div>
+
 <script>
 let bana=[], mode="none";
 let tempX,tempY;
+
 let referensBild=null;
 let aktuellPunktIndex=null;
-let steg=0;
 
-let kartInput=document.getElementById("kartInput");
-let bild=document.getElementById("bild");
+let steg=0;
+let scanning=false;
+
+let aktuellKontroll=null;
+let aktuellFragaIndex=0;
 
 /* KARTA */
 kartInput.onchange=e=>{
@@ -231,11 +239,13 @@ function sparaPunkt(){
 
   bana.push({
     bild:referensBild,
-    fragaLista:[{fraga:fragaInput.value}]
+    fragaLista:[{
+      fraga:fragaInput.value,
+      svar:svarInput.value
+    }]
   });
 
   aktuellPunktIndex=bana.length-1;
-
   antal.innerText="Punkter: "+bana.length;
 
   visaFragaLista();
@@ -243,10 +253,12 @@ function sparaPunkt(){
 
 /* LÄGG TILL */
 function laggTillFraga(){
+
   if(aktuellPunktIndex===null) return;
 
   bana[aktuellPunktIndex].fragaLista.push({
-    fraga:fragaInput.value
+    fraga:fragaInput.value,
+    svar:svarInput.value
   });
 
   visaFragaLista();
@@ -292,12 +304,13 @@ function startSpel(){
   fragaLista.style.display="none";
 
   steg=0;
+
   referens.src=bana[0].bild;
 
   scan.style.display="block";
 }
 
-/* ✅ SCAN */
+/* SCAN */
 function startScan(){
 
   navigator.mediaDevices.getUserMedia({
@@ -308,6 +321,7 @@ function startScan(){
 
     video.onloadedmetadata=()=>{
       video.play();
+      scanning=true;
       liveScan();
     };
   });
@@ -315,6 +329,8 @@ function startScan(){
 
 /* ✅ LIVE SCAN */
 function liveScan(){
+
+  if(!scanning) return;
 
   if(!video.videoWidth){
     setTimeout(liveScan,200);
@@ -324,7 +340,8 @@ function liveScan(){
   let c=document.createElement("canvas");
   let ctx=c.getContext("2d");
 
-  c.width=100; c.height=100;
+  c.width=100;
+  c.height=100;
 
   ctx.drawImage(video,0,0,100,100);
   let elev=ctx.getImageData(0,0,100,100).data;
@@ -337,7 +354,8 @@ function liveScan(){
     let c2=document.createElement("canvas");
     let ctx2=c2.getContext("2d");
 
-    c2.width=100; c2.height=100;
+    c2.width=100;
+    c2.height=100;
 
     ctx2.drawImage(img,0,0,100,100);
     let ref=ctx2.getImageData(0,0,100,100).data;
@@ -354,12 +372,66 @@ function liveScan(){
     percent.innerText=p+"%";
 
     if(p>85){
-      alert("✅ Match!");
+
+      scanning=false;
+
+      aktuellKontroll=bana[steg];
+      aktuellFragaIndex=0;
+
+      visaFraga();
       return;
     }
 
     setTimeout(liveScan,300);
   };
+}
+
+/* ✅ VISA FRÅGA */
+function visaFraga(){
+
+  scan.style.display="none";
+  fragaRuta.style.display="block";
+
+  let f=aktuellKontroll.fragaLista[aktuellFragaIndex];
+  fragaText.innerText="Punkt "+(steg+1)+": "+f.fraga;
+}
+
+/* ✅ SVAR */
+function kollaSvar(){
+
+  let f=aktuellKontroll.fragaLista[aktuellFragaIndex];
+
+  if(svarElev.value.toLowerCase() === f.svar.toLowerCase()){
+
+    aktuellFragaIndex++;
+
+    if(aktuellFragaIndex < aktuellKontroll.fragaLista.length){
+      visaFraga();
+    }
+    else{
+
+      steg++;
+
+      if(steg < bana.length){
+
+        referens.src=bana[steg].bild;
+
+        fragaRuta.style.display="none";
+        scan.style.display="block";
+
+        scanning=true;
+        liveScan();
+
+      } else {
+        alert("🎉 Klar!");
+      }
+    }
+
+  } else {
+    alert("❌ Fel svar");
+  }
+
+  svarElev.value="";
 }
 </script>
 
