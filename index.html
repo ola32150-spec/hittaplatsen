@@ -13,13 +13,6 @@ body{
   font-family:Arial;
 }
 
-/* 🔥 SPEL-LÄGE – döljer edit */
-.play #editor,
-.play label,
-.play #editBtn {
-  display:none !important;
-}
-
 /* KARTA */
 #bildWrapper{
   position:relative;
@@ -43,25 +36,17 @@ body{
 }
 
 /* KNAPPAR */
-label{
+label, button{
   display:block;
-  background:#3498db;
   margin:10px auto;
-  padding:12px;
   width:90%;
   max-width:400px;
+  padding:12px;
   border-radius:10px;
 }
 
-button{
-  width:90%;
-  max-width:400px;
-  padding:12px;
-  margin-top:10px;
-  border:none;
-  border-radius:10px;
-  background:#2ecc71;
-}
+label{ background:#3498db; }
+button{ background:#2ecc71; border:none; }
 
 /* SCAN */
 .scanBox{
@@ -84,7 +69,6 @@ button{
   transform:translateX(-50%);
 }
 
-/* VISNING */
 #editor,#scan,#fragaRuta{display:none;}
 
 #preview{
@@ -99,11 +83,11 @@ button{
 
 <h2>Kartjakten</h2>
 
-<label for="kartInput">📍 Ladda upp karta</label>
+<label id="kartLabel" for="kartInput">📍 Ladda upp karta</label>
 <input type="file" id="kartInput" hidden>
 
 <button id="editBtn" onclick="mode='edit'">Redigera</button>
-<button onclick="startSpel()">Spela</button>
+<button id="playBtn" onclick="startSpel()">Spela</button>
 
 <div id="bildWrapper">
   <img id="bild">
@@ -113,7 +97,6 @@ button{
 
 <!-- EDITOR -->
 <div id="editor">
-
   <label for="bildInput">📷 Skapa referensbild</label>
   <input type="file" id="bildInput" hidden>
 
@@ -124,12 +107,10 @@ button{
 
   <button onclick="sparaPunkt()">Spara punkt</button>
   <button onclick="laggTillFraga()">➕ Lägg till fråga</button>
-
 </div>
 
 <!-- SCAN -->
 <div id="scan">
-
   <div class="scanBox">
     <img id="referens">
   </div>
@@ -164,21 +145,18 @@ let aktuellKontroll=null;
 let aktuellFragaIndex=0;
 
 /* ELEMENT */
-let kartInput = document.getElementById("kartInput");
-let bild = document.getElementById("bild");
+let kartInput=document.getElementById("kartInput");
+let bild=document.getElementById("bild");
 
 /* LADDA KARTA */
-kartInput.onchange = function(e){
-  let file = e.target.files[0];
-  if(!file) return;
-
-  let reader = new FileReader();
-  reader.onload = ev => bild.src = ev.target.result;
-  reader.readAsDataURL(file);
+kartInput.onchange=e=>{
+  let r=new FileReader();
+  r.onload=ev=>bild.src=ev.target.result;
+  r.readAsDataURL(e.target.files[0]);
 };
 
 /* REFERENSBILD */
-bildInput.onchange = e => {
+bildInput.onchange=e=>{
   let r=new FileReader();
   r.onload=ev=>{
     referensBild=ev.target.result;
@@ -189,38 +167,25 @@ bildInput.onchange = e => {
 };
 
 /* KLICK KARTA */
-bild.onclick = e => {
+bild.onclick=e=>{
+  if(mode!=="edit") return;
 
-  if(mode !== "edit") return;
+  let rect=bild.getBoundingClientRect();
+  tempX=e.clientX-rect.left;
+  tempY=e.clientY-rect.top;
 
-  let rect = bild.getBoundingClientRect();
-
-  tempX = e.clientX - rect.left;
-  tempY = e.clientY - rect.top;
-
-  let p = document.createElement("div");
+  let p=document.createElement("div");
   p.className="plats";
   p.style.left=tempX+"px";
   p.style.top=tempY+"px";
 
   document.getElementById("bildWrapper").appendChild(p);
 
-  aktuellPunktIndex=null;
   editor.style.display="block";
 };
 
 /* SKAPA PUNKT */
 function sparaPunkt(){
-
-  if(!referensBild){
-    alert("Välj bild först");
-    return;
-  }
-
-  if(!fragaInput.value || !svarInput.value){
-    alert("Skriv fråga och svar");
-    return;
-  }
 
   let obj={
     top:tempX,
@@ -238,7 +203,7 @@ function sparaPunkt(){
   svarInput.value="";
 }
 
-/* LÄGG TILL FRÅGA */
+/* LÄGG FRÅGA */
 function laggTillFraga(){
 
   if(aktuellPunktIndex===null){
@@ -246,9 +211,7 @@ function laggTillFraga(){
     return;
   }
 
-  let punkt=bana[aktuellPunktIndex];
-
-  punkt.fragaLista.push({
+  bana[aktuellPunktIndex].fragaLista.push({
     fraga:fragaInput.value,
     svar:svarInput.value
   });
@@ -257,7 +220,7 @@ function laggTillFraga(){
   svarInput.value="";
 }
 
-/* ✅ SPEL */
+/* ✅ FIXAT SPELLÄGE */
 function startSpel(){
 
   if(bana.length===0){
@@ -266,10 +229,14 @@ function startSpel(){
   }
 
   mode="play";
-  document.body.classList.add("play");
 
+  /* ✅ GÖM ALLT EDIT */
   editor.style.display="none";
+  document.getElementById("editBtn").style.display="none";
+  document.getElementById("kartLabel").style.display="none";
+  document.getElementById("playBtn").style.display="none";
 
+  /* ✅ START */
   steg=0;
   referens.src=bana[0].bild;
 
@@ -290,8 +257,14 @@ function liveScan(){
 
   if(!scanning) return;
 
+  if(!video.videoWidth){
+    setTimeout(liveScan,300);
+    return;
+  }
+
   let c=document.createElement("canvas");
   let ctx=c.getContext("2d");
+
   c.width=100; c.height=100;
 
   ctx.drawImage(video,0,0,100,100);
@@ -304,9 +277,10 @@ function liveScan(){
 
     let c2=document.createElement("canvas");
     let ctx2=c2.getContext("2d");
-    c2.width=100; c2.height=100;
 
+    c2.width=100; c2.height=100;
     ctx2.drawImage(img,0,0,100,100);
+
     let ref=ctx2.getImageData(0,0,100,100).data;
 
     let diff=0;
@@ -316,8 +290,7 @@ function liveScan(){
       diff+=Math.abs(elev[i+2]-ref[i+2]);
     }
 
-    let max=100*100*255*3;
-    let p=Math.round((1-diff/max)*100);
+    let p=Math.round((1-diff/(100*100*255*3))*100);
     percent.innerText=p+"%";
 
     if(p>85){
@@ -332,7 +305,7 @@ function liveScan(){
   };
 }
 
-/* FRÅGOR */
+/* FRÅGA */
 function visaFraga(){
   scan.style.display="none";
   fragaRuta.style.display="block";
