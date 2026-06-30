@@ -26,7 +26,7 @@ body{
   max-width:500px;
 }
 
-/* NUMRERADE PUNKTER */
+/* NUMRERAD PUNKT */
 .plats{
   position:absolute;
   width:26px;
@@ -78,7 +78,7 @@ button{ background:#2ecc71; border:none; }
   transform:translateX(-50%);
 }
 
-/* FRÅGELISTA */
+/* LISTA */
 #fragaLista{
   width:90%;
   max-width:400px;
@@ -89,7 +89,6 @@ button{ background:#2ecc71; border:none; }
   text-align:left;
 }
 
-/* VISNING */
 #editor,#scan,#fragaRuta{display:none;}
 
 #preview{
@@ -119,7 +118,8 @@ button{ background:#2ecc71; border:none; }
 <!-- EDITOR -->
 <div id="editor">
 
-  <label for="bildInput">📷 Skapa referensbild</label>
+  <!-- ✅ DYNAMISK TEXT -->
+  <label id="bildLabel" for="bildInput">📷 Skapa referensbild</label>
   <input type="file" id="bildInput" hidden>
 
   <img id="preview">
@@ -132,7 +132,6 @@ button{ background:#2ecc71; border:none; }
 
 </div>
 
-<!-- ✅ NY: LISTA -->
 <div id="fragaLista"></div>
 
 <!-- SCAN -->
@@ -169,9 +168,22 @@ let scanning=false;
 let aktuellKontroll=null;
 let aktuellFragaIndex=0;
 
-/* ELEMENT */
 let kartInput=document.getElementById("kartInput");
 let bild=document.getElementById("bild");
+
+/* ✅ DYNAMISK LABEL */
+function uppdateraBildLabel(){
+
+  let text="📷 Skapa referensbild";
+
+  if(aktuellPunktIndex === null){
+    text += " till punkt " + (bana.length+1);
+  } else {
+    text += " till punkt " + (aktuellPunktIndex+1);
+  }
+
+  document.getElementById("bildLabel").innerText=text;
+}
 
 /* LADDA KARTA */
 kartInput.onchange=e=>{
@@ -193,7 +205,7 @@ bildInput.onchange=e=>{
 
 /* KLICK */
 bild.onclick=e=>{
-  if(mode!=="edit") return;
+  if(mode!=="edit")return;
 
   let rect=bild.getBoundingClientRect();
   tempX=e.clientX-rect.left;
@@ -204,28 +216,28 @@ bild.onclick=e=>{
   p.style.left=tempX+"px";
   p.style.top=tempY+"px";
 
-  /* ✅ NUMMER */
   p.innerText=bana.length+1;
 
-  document.getElementById("bildWrapper").appendChild(p);
+  bildWrapper.appendChild(p);
 
   aktuellPunktIndex=null;
-
   editor.style.display="block";
   fragaLista.innerHTML="";
+
+  uppdateraBildLabel();
 };
 
-/* ✅ VISA LISTA */
+/* VISA LISTA */
 function visaFragaLista(){
 
-  if(aktuellPunktIndex===null) return;
+  if(aktuellPunktIndex===null)return;
 
   let punkt=bana[aktuellPunktIndex];
 
   let html="<h3>Punkt "+(aktuellPunktIndex+1)+"</h3>";
 
   punkt.fragaLista.forEach((f,i)=>{
-    html += "<p>" + (i+1) + ". " + f.fraga + "</p>";
+    html+="<p>"+(i+1)+". "+f.fraga+"</p>";
   });
 
   fragaLista.innerHTML=html;
@@ -250,6 +262,7 @@ function sparaPunkt(){
   svarInput.value="";
 
   visaFragaLista();
+  uppdateraBildLabel();
 }
 
 /* LÄGG TILL FRÅGA */
@@ -260,9 +273,7 @@ function laggTillFraga(){
     return;
   }
 
-  let punkt=bana[aktuellPunktIndex];
-
-  punkt.fragaLista.push({
+  bana[aktuellPunktIndex].fragaLista.push({
     fraga:fragaInput.value,
     svar:svarInput.value
   });
@@ -271,6 +282,7 @@ function laggTillFraga(){
   svarInput.value="";
 
   visaFragaLista();
+  uppdateraBildLabel();
 }
 
 /* SPEL */
@@ -293,108 +305,6 @@ function startSpel(){
   referens.src=bana[0].bild;
 
   scan.style.display="block";
-}
-
-/* SCAN */
-function startScan(){
-  navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}})
-  .then(s=>{
-    video.srcObject=s;
-    scanning=true;
-    liveScan();
-  });
-}
-
-/* SCAN LOOP */
-function liveScan(){
-
-  if(!scanning) return;
-
-  if(!video.videoWidth){
-    setTimeout(liveScan,300);
-    return;
-  }
-
-  let c=document.createElement("canvas");
-  let ctx=c.getContext("2d");
-
-  c.width=100; c.height=100;
-
-  ctx.drawImage(video,0,0,100,100);
-  let elev=ctx.getImageData(0,0,100,100).data;
-
-  let img=new Image();
-  img.src=referens.src;
-
-  img.onload=()=>{
-
-    let c2=document.createElement("canvas");
-    let ctx2=c2.getContext("2d");
-
-    c2.width=100; c2.height=100;
-    ctx2.drawImage(img,0,0,100,100);
-
-    let ref=ctx2.getImageData(0,0,100,100).data;
-
-    let diff=0;
-    for(let i=0;i<elev.length;i+=4){
-      diff+=Math.abs(elev[i]-ref[i]);
-      diff+=Math.abs(elev[i+1]-ref[i+1]);
-      diff+=Math.abs(elev[i+2]-ref[i+2]);
-    }
-
-    let p=Math.round((1-diff/(100*100*255*3))*100);
-    percent.innerText=p+"%";
-
-    if(p>85){
-      scanning=false;
-      aktuellKontroll=bana[steg];
-      aktuellFragaIndex=0;
-      visaFraga();
-      return;
-    }
-
-    setTimeout(liveScan,400);
-  };
-}
-
-/* FRÅGOR */
-function visaFraga(){
-  scan.style.display="none";
-  fragaRuta.style.display="block";
-
-  let f=aktuellKontroll.fragaLista[aktuellFragaIndex];
-  fragaText.innerText="Punkt "+(steg+1)+": "+f.fraga;
-}
-
-function kollaSvar(){
-
-  let f=aktuellKontroll.fragaLista[aktuellFragaIndex];
-
-  if(svarElev.value.toLowerCase()===f.svar.toLowerCase()){
-
-    aktuellFragaIndex++;
-
-    if(aktuellFragaIndex < aktuellKontroll.fragaLista.length){
-      visaFraga();
-    } else {
-      steg++;
-      if(steg<bana.length){
-        referens.src=bana[steg].bild;
-        fragaRuta.style.display="none";
-        scan.style.display="block";
-        scanning=true;
-        liveScan();
-      } else {
-        alert("🎉 Klar!");
-      }
-    }
-
-  } else {
-    alert("❌ Fel svar");
-  }
-
-  svarElev.value="";
 }
 </script>
 
