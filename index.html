@@ -13,11 +13,11 @@ body{
   font-family:Arial;
 }
 
-/* ✅ FIXAD KARTA */
+/* KARTA */
 #bildWrapper{
-  position: relative;
-  width: fit-content;
-  margin: 20px auto;
+  position:relative;
+  width:fit-content;
+  margin:20px auto;
 }
 
 #bild{
@@ -26,7 +26,6 @@ body{
   max-width:500px;
 }
 
-/* RING */
 .plats{
   position:absolute;
   width:20px;
@@ -144,64 +143,82 @@ button{
 </div>
 
 <script>
-let bana=[];
-let mode="none";
-let tempX,tempY;
+let bana = [];
+let mode = "none";
 
-let referensBild=null;
-let aktuellPunktIndex=null;
+let tempX, tempY;
 
-let steg=0;
-let scanning=false;
+let referensBild = null;
+let aktuellPunktIndex = null;
 
-let aktuellKontroll=null;
-let aktuellFragaIndex=0;
+let steg = 0;
+let scanning = false;
 
-/* LADDA KARTA */
-kartInput.onchange=e=>{
-  let r=new FileReader();
-  r.onload=ev=>bild.src=ev.target.result;
-  r.readAsDataURL(e.target.files[0]);
+let aktuellKontroll = null;
+let aktuellFragaIndex = 0;
+
+/* ✅ HÄMTA ELEMENT (FIX!) */
+let kartInput = document.getElementById("kartInput");
+let bild = document.getElementById("bild");
+
+/* ✅ LADDA KARTA (FIXAD) */
+kartInput.onchange = function(e){
+
+  let file = e.target.files[0];
+
+  if(!file){
+    alert("Ingen fil vald");
+    return;
+  }
+
+  let reader = new FileReader();
+
+  reader.onload = function(ev){
+    bild.src = ev.target.result;
+  };
+
+  reader.readAsDataURL(file);
 };
 
 /* REFERENSBILD */
-bildInput.onchange=e=>{
-  let file=e.target.files[0];
-  let r=new FileReader();
-  r.onload=ev=>{
-    referensBild=ev.target.result;
-    preview.src=referensBild;
-    preview.style.display="block";
+bildInput.onchange = e => {
+
+  let file = e.target.files[0];
+  let r = new FileReader();
+
+  r.onload = ev => {
+    referensBild = ev.target.result;
+    preview.src = referensBild;
+    preview.style.display = "block";
   };
+
   r.readAsDataURL(file);
 };
 
-/* ✅ FIXAD KLICK – EXAKT POSITION */
+/* ✅ KLICK (FIXAD POSITION) */
 bild.onclick = e => {
 
   if(mode !== "edit") return;
 
   let rect = bild.getBoundingClientRect();
 
-  let x = e.clientX - rect.left;
-  let y = e.clientY - rect.top;
+  tempX = e.clientX - rect.left;
+  tempY = e.clientY - rect.top;
 
-  tempX = x;
-  tempY = y;
+  let p = document.createElement("div");
+  p.className = "plats";
 
-  let p=document.createElement("div");
-  p.className="plats";
-  p.style.left=x+"px";
-  p.style.top=y+"px";
+  p.style.left = tempX + "px";
+  p.style.top = tempY + "px";
 
-  /* ✅ FÄST PÅ RÄTT STÄLLE */
   document.getElementById("bildWrapper").appendChild(p);
 
-  aktuellPunktIndex=null;
-  editor.style.display="block";
+  aktuellPunktIndex = null;
+
+  editor.style.display = "block";
 };
 
-/* SPARA PUNKT */
+/* ✅ SKAPA PUNKT */
 function sparaPunkt(){
 
   if(!referensBild){
@@ -209,5 +226,191 @@ function sparaPunkt(){
     return;
   }
 
-  let obj={
-   
+  if(!fragaInput.value || !svarInput.value){
+    alert("Skriv fråga och svar");
+    return;
+  }
+
+  let obj = {
+    top: tempX,
+    left: tempY,
+    bild: referensBild,
+    fragaLista: []
+  };
+
+  obj.fragaLista.push({
+    fraga: fragaInput.value,
+    svar: svarInput.value
+  });
+
+  bana.push(obj);
+
+  aktuellPunktIndex = bana.length - 1;
+
+  antal.innerText = "Kontroller: " + bana.length;
+
+  fragaInput.value = "";
+  svarInput.value = "";
+
+  alert("✅ Punkt skapad – nu kan du lägga fler frågor");
+}
+
+/* ✅ LÄGG TILL FLERA FRÅGOR (FIXAD) */
+function laggTillFraga(){
+
+  if(aktuellPunktIndex === null || !bana[aktuellPunktIndex]){
+    alert("❗ Skapa punkt först");
+    return;
+  }
+
+  if(!fragaInput.value || !svarInput.value){
+    alert("Skriv fråga och svar först!");
+    return;
+  }
+
+  let punkt = bana[aktuellPunktIndex];
+
+  punkt.fragaLista.push({
+    fraga: fragaInput.value,
+    svar: svarInput.value
+  });
+
+  fragaInput.value = "";
+  svarInput.value = "";
+
+  alert("✅ Fråga tillagd på samma punkt");
+}
+
+/* SPEL */
+function startSpel(){
+
+  if(bana.length === 0){
+    alert("Skapa bana först!");
+    return;
+  }
+
+  steg = 0;
+  referens.src = bana[0].bild;
+  scan.style.display = "block";
+}
+
+/* SCAN */
+function startScan(){
+  navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}})
+  .then(s=>{
+    video.srcObject = s;
+    scanning = true;
+    liveScan();
+  });
+}
+
+function liveScan(){
+
+  if(!scanning) return;
+
+  if(!video.videoWidth){
+    setTimeout(liveScan,300);
+    return;
+  }
+
+  let c = document.createElement("canvas");
+  let ctx = c.getContext("2d");
+
+  c.width = 100;
+  c.height = 100;
+
+  ctx.drawImage(video,0,0,100,100);
+
+  let elev = ctx.getImageData(0,0,100,100).data;
+
+  let img = new Image();
+  img.src = referens.src;
+
+  img.onload = () => {
+
+    let c2 = document.createElement("canvas");
+    let ctx2 = c2.getContext("2d");
+
+    c2.width = 100;
+    c2.height = 100;
+
+    ctx2.drawImage(img,0,0,100,100);
+
+    let ref = ctx2.getImageData(0,0,100,100).data;
+
+    let diff = 0;
+
+    for(let i=0;i<elev.length;i+=4){
+      diff += Math.abs(elev[i]-ref[i]);
+      diff += Math.abs(elev[i+1]-ref[i+1]);
+      diff += Math.abs(elev[i+2]-ref[i+2]);
+    }
+
+    let max = 100*100*255*3;
+    let p = Math.round((1-diff/max)*100);
+
+    percent.innerText = p + "%";
+
+    if(p > 85){
+
+      scanning = false;
+
+      aktuellKontroll = bana[steg];
+      aktuellFragaIndex = 0;
+
+      visaFraga();
+      return;
+    }
+
+    setTimeout(liveScan,400);
+  };
+}
+
+/* FRÅGA */
+function visaFraga(){
+
+  scan.style.display = "none";
+  fragaRuta.style.display = "block";
+
+  let f = aktuellKontroll.fragaLista[aktuellFragaIndex];
+  fragaText.innerText = f.fraga;
+}
+
+function kollaSvar(){
+
+  let f = aktuellKontroll.fragaLista[aktuellFragaIndex];
+
+  if(svarElev.value.toLowerCase() === f.svar.toLowerCase()){
+
+    aktuellFragaIndex++;
+
+    if(aktuellFragaIndex < aktuellKontroll.fragaLista.length){
+
+      visaFraga();
+
+    } else {
+
+      steg++;
+
+      if(steg < bana.length){
+        referens.src = bana[steg].bild;
+        fragaRuta.style.display = "none";
+        scan.style.display = "block";
+        scanning = true;
+        liveScan();
+      } else {
+        alert("🎉 Klar!");
+      }
+
+    }
+
+  } else {
+    alert("❌ Fel svar");
+  }
+
+  svarElev.value = "";
+}
+</script>
+
+</body>
+</html>
