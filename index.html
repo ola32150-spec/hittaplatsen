@@ -21,16 +21,14 @@ body{
   display:block;
 }
 
-/* SPEL-LAYOUT */
+/* SPEL */
 #spelContainer{
   display:flex;
   justify-content:center;
-  align-items:flex-start;
   gap:20px;
   flex-wrap:wrap;
 }
 
-/* INFO */
 #infoBox{
   max-width:200px;
   text-align:left;
@@ -47,14 +45,9 @@ button{
   margin:10px auto;
 }
 
-label{
-  display:block;
-  background:#3498db;
-  padding:12px;
-  border-radius:10px;
-  width:90%;
-  max-width:300px;
+input[type="file"]{
   margin:10px auto;
+  display:block;
 }
 
 /* SCAN */
@@ -81,7 +74,6 @@ video, img{
 
 /* GÖM */
 #spelUI,#scan,#fragaRuta{display:none;}
-
 </style>
 </head>
 
@@ -89,14 +81,13 @@ video, img{
 
 <h2>Kartjakten</h2>
 
-<!-- ✅ ENDAST EN KNAPP -->
-<label for="kartInput">📍 Ladda upp karta</label>
-<input type="file" id="kartInput" accept="image/*" style="display:none;">
+<!-- ✅ ENKEL FILINPUT (FUNKAR ALLTID) -->
+<input type="file" id="kartInput" accept="image/*">
 
-<button id="playBtn" onclick="startSpel()">Spela</button>
+<button onclick="startSpel()">Spela</button>
 
-<!-- ✅ KARTA -->
-
+<!-- ✅ KARTA VISAS HÄR -->
+<img id="bild">
 
 <!-- SPEL -->
 <div id="spelUI">
@@ -137,71 +128,66 @@ video, img{
 </div>
 
 <script>
+let bana=[];
+let steg=0;
+let scanning=false;
 
-// ✅ DATA
-let bana = [{
-  bild:null,
-  fragaLista:[{fraga:"Testfråga", svar:"test"}]
-}];
+let aktuellKontroll=null;
 
-let steg = 0;
-let scanning = false;
+/* ✅ GARANTERAD FUNGERANDE BILDLADDNING */
+document.getElementById("kartInput").onchange=function(e){
 
-let aktuellKontroll = null;
-let aktuellFragaIndex = 0;
+  const file=e.target.files[0];
 
-let bild = document.getElementById("bild");
-let spelBild = document.getElementById("spelBild");
+  if(!file){
+    alert("Ingen fil vald");
+    return;
+  }
 
-/* ✅ STABIL LADDNING */
-document.getElementById("kartInput").addEventListener("change", function(e){
+  const reader=new FileReader();
 
-  let file = e.target.files[0];
-  if(!file) return;
+  reader.onload=function(ev){
 
-  let reader = new FileReader();
+    document.getElementById("bild").src=ev.target.result;
 
-  reader.onload = function(ev){
+    /* sparar kartan som första punkt */
+    bana[0]={
+      bild:ev.target.result,
+      fragaLista:[{fraga:"Testfråga", svar:"test"}]
+    };
 
-    bild.src = ev.target.result;
-
-    /* ✅ Spara till spelet */
-    bana[0].bild = ev.target.result;
-
-    console.log("✅ Kartbild laddad");
+    console.log("✅ Bild laddad korrekt");
 
   };
 
   reader.readAsDataURL(file);
-});
+};
 
-/* ✅ SPEL START */
+/* SPEL */
 function startSpel(){
 
-  if(!bana[0].bild){
+  if(!bana[0]){
     alert("Ladda karta först!");
     return;
   }
 
-  document.querySelector("label").style.display="none";
-  playBtn.style.display="none";
+  document.getElementById("kartInput").style.display="none";
 
   spelUI.style.display="block";
 
-  steg = 0;
-
-  spelBild.src = bana[steg].bild;
+  steg=0;
+  spelBild.src=bana[0].bild;
 }
 
-/* ✅ KNAPP */
+/* SCAN KNAPP */
 function visaScan(){
   spelUI.style.display="none";
   scan.style.display="block";
 
-  referens.src = bana[steg].bild;
+  referens.src=bana[steg].bild;
 }
 
-/* ✅ SCAN */
+/* SCAN */
 function startScan(){
 
   navigator.mediaDevices.getUserMedia({
@@ -218,7 +204,7 @@ function startScan(){
   });
 }
 
-/* ✅ LIVE SCAN */
+/* SCAN LOOP */
 function liveScan(){
 
   if(!scanning) return;
@@ -265,9 +251,7 @@ function liveScan(){
     if(p>85){
 
       scanning=false;
-
       aktuellKontroll=bana[steg];
-      aktuellFragaIndex=0;
 
       visaFraga();
       return;
@@ -277,26 +261,16 @@ function liveScan(){
   };
 }
 
-/* ✅ FRÅGA */
+/* FRÅGA */
 function visaFraga(){
-
   scan.style.display="none";
   fragaRuta.style.display="block";
 
-  let f=aktuellKontroll.fragaLista[0];
-  fragaText.innerText=f.fraga;
+  fragaText.innerText=aktuellKontroll.fragaLista[0].fraga;
 }
 
 function kollaSvar(){
-
-  steg++;
-
-  if(steg < bana.length){
-    fragaRuta.style.display="none";
-    spelUI.style.display="block";
-  } else {
-    alert("🎉 Klar!");
-  }
+  alert("✅ Nästa steg");
 }
 </script>
 
