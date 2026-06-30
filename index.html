@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Kartjakten</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 body{
@@ -21,6 +22,7 @@ body{
   flex-wrap:wrap;
 }
 
+/* KARTA */
 #bildWrapper{
   position:relative;
 }
@@ -30,6 +32,7 @@ body{
   max-width:500px;
 }
 
+/* PUNKTER */
 .plats{
   position:absolute;
   width:26px;
@@ -92,7 +95,8 @@ video, img{
 }
 
 /* GÖM */
-#editor,#scan,#fragaRuta,#spelUI{display:none;}
+#scan,#fragaRuta,#spelUI{display:none;}
+
 </style>
 </head>
 
@@ -100,9 +104,9 @@ video, img{
 
 <h2>Kartjakten</h2>
 
-<!-- ✅ NY: LADDNING AV KARTA -->
-<label id="kartLabel" for="kartInput">📍 Ladda upp karta</label>
-<input type="file" id="kartInput" hidden>
+<!-- ✅ FIXAD UPLOAD -->
+<label for="kartInput">📍 Ladda upp karta</label>
+<input type="file" id="kartInput" accept="image/*">
 
 <button id="editBtn" onclick="mode='edit'">Redigera</button>
 <button id="playBtn" onclick="startSpel()">Spela</button>
@@ -116,11 +120,9 @@ video, img{
     <img id="bild">
   </div>
 
-  <!-- INFO -->
   <div id="infoBox">
     <h3>Hitta platsen</h3>
     <p>Gå till rätt plats på kartan.</p>
-
     <button onclick="visaScan()">Jag är här nu</button>
   </div>
 
@@ -163,11 +165,20 @@ let aktuellFragaIndex=0;
 let kartInput=document.getElementById("kartInput");
 let bild=document.getElementById("bild");
 
-/* ✅ LADDA KARTA */
-kartInput.onchange=e=>{
-  let r=new FileReader();
-  r.onload=ev=>bild.src=ev.target.result;
-  r.readAsDataURL(e.target.files[0]);
+/* ✅ KRITISK FIX: robust bildladdning */
+kartInput.onchange = function(e){
+
+  let file = e.target.files[0];
+
+  if(!file) return;
+
+  let reader = new FileReader();
+
+  reader.onload = function(event){
+    bild.src = event.target.result;
+  };
+
+  reader.readAsDataURL(file);
 };
 
 /* SPEL */
@@ -180,19 +191,20 @@ function startSpel(){
 
   mode="play";
 
-  /* ✅ GÖM UPLOAD + KNAPPAR */
-  kartLabel.style.display="none";
+  document.querySelector("label").style.display="none";
+  kartInput.style.display="none";
   editBtn.style.display="none";
   playBtn.style.display="none";
 
   spelUI.style.display="block";
 
   steg=0;
-  bild.src=bana[0].bild;
+  bild.src=bana[steg].bild;
 }
 
 /* VISA SCAN */
 function visaScan(){
+
   spelUI.style.display="none";
   scan.style.display="block";
 
@@ -216,6 +228,7 @@ function startScan(){
   });
 }
 
+/* LIVE SCAN */
 function liveScan(){
 
   if(!scanning) return;
@@ -276,7 +289,6 @@ function liveScan(){
 
 /* FRÅGA */
 function visaFraga(){
-
   scan.style.display="none";
   fragaRuta.style.display="block";
 
