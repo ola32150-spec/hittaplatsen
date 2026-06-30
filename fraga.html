@@ -3,46 +3,32 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fråga</title>
 
 <style>
 body {
-  background: black;
-  color: white;
-  font-family: Arial;
-  text-align: center;
+  background:black;
+  color:white;
+  font-family:Arial;
+  text-align:center;
 }
 
-.card {
-  width: 90%;
-  max-width: 400px;
-  margin: 50px auto;
+.box {
+  width:90%;
+  max-width:400px;
+  margin:60px auto;
 }
 
-input {
-  width: 100%;
-  padding: 12px;
-  margin-top: 10px;
-}
-
-button {
-  width: 100%;
-  padding: 12px;
-  margin-top: 10px;
-  background: #2ecc71;
-  border: none;
-  color: white;
-}
-
-#feedback {
-  margin-top: 15px;
+input, button {
+  width:100%;
+  padding:12px;
+  margin-top:10px;
 }
 </style>
 </head>
 
 <body>
 
-<div class="card">
+<div class="box">
 
   <h2 id="fraga"></h2>
 
@@ -55,33 +41,23 @@ button {
 </div>
 
 <script>
-let data;
-
-/* HÄMTA DATA */
 let params = new URLSearchParams(window.location.search);
-data = JSON.parse(decodeURIComponent(params.get("data")));
+let data = JSON.parse(decodeURIComponent(params.get("data")));
 
 document.getElementById("fraga").innerText = data.fraga;
 
-/* KOLLA */
 function kolla(){
 
   let svar = document.getElementById("svar").value.toLowerCase();
 
   if(svar === data.svar.toLowerCase()){
-
     alert("✅ Rätt!");
-
-    window.history.back(); // tillbaka till spelet
-
+    window.history.back();
   } else {
-
-    document.getElementById("feedback").innerText = "❌ Fel, försök igen";
-
+    feedback.innerText = "❌ Fel svar";
   }
 }
 </script>
 
 </body>
 </html>
-
