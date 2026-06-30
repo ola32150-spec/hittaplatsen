@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <title>Kartjakten</title>
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -23,16 +22,11 @@ body {
   display: flex;
   justify-content: space-between;
   padding: 12px;
-  background: #000;
 }
 
 /* KARTA */
-#karta {
-  position: relative;
-}
 #karta img {
   width: 100%;
-  border-radius: 10px;
 }
 
 /* RING */
@@ -43,45 +37,62 @@ body {
   border: 3px solid red;
   border-radius: 50%;
   transform: translate(-50%, -50%);
-  pointer-events: none;
 }
 
-/* ✅ STÖRRE SCAN-KORT */
+/* ✅ CARD */
 .card {
-  background: #000;
-  padding: 12px;
   margin: 25px auto;
-  border-radius: 16px;
-
-  width: 90%;         /* ✅ större */
-  max-width: 420px;   /* ✅ tydligt större fönster */
-
-  border: 1px solid #222;
+  width: 90%;
+  max-width: 420px;
 }
 
-/* MEDIA */
-.card img,
-.card video {
+/* =================== */
+/* ✅ KAMERA MED SIKTE */
+/* =================== */
+
+.cameraBox {
+  position: relative;
+}
+
+#video {
   width: 100%;
   border-radius: 12px;
-  background: #000;
-  display: block;
 }
 
-/* KNAPPAR */
+/* ✅ SIKTE */
+#targetBox {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 120px;
+  height: 120px;
+  transform: translate(-50%, -50%);
+  border: 4px solid red;
+  border-radius: 10px;
+}
+
+/* ✅ PROCENT TEXT */
+#percentText {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 22px;
+  font-weight: bold;
+}
+
+/* BUTTON */
 button {
   width: 90%;
   max-width: 420px;
   padding: 12px;
-  margin-top: 12px;
-  border-radius: 12px;
-  border: none;
+  border-radius: 10px;
   background: #2ecc71;
+  border: none;
   color: white;
   font-size: 16px;
 }
 
-/* UI */
 #editor, #scan, #fragaRuta {
   display: none;
 }
@@ -108,7 +119,6 @@ button {
 
 <!-- EDITOR -->
 <div id="editor" class="card">
-  <h3>Ny kontroll</h3>
   <input type="file" id="bildInput"><br><br>
   <input id="fragaInput" placeholder="Fråga"><br><br>
   <input id="svarInput" placeholder="Svar"><br><br>
@@ -118,14 +128,22 @@ button {
 <!-- ✅ SCAN -->
 <div id="scan">
 
-  <h3>📸 Rikta kameran</h3>
+  <h3>📸 Sikta i rutan</h3>
 
   <div class="card">
     <img id="referens">
   </div>
 
-  <div class="card">
+  <div class="card cameraBox">
+
     <video id="video" autoplay></video>
+
+    <!-- ✅ SIKTE -->
+    <div id="targetBox"></div>
+
+    <!-- ✅ LIVE PROCENT -->
+    <div id="percentText">0%</div>
+
   </div>
 
   <button onclick="startScan()">Scanna</button>
@@ -141,11 +159,11 @@ button {
 
 <script>
 let bana=[], mode="none";
-let steg=0, poang=0, tid=0, timer=null;
-let tempX=0,tempY=0;
+let steg=0, poang=0, tid=0;
+let tempX,tempY;
 let scanning=false;
 
-/* LADDA KARTA */
+/* KARTA */
 kartInput.onchange=e=>{
   let r=new FileReader();
   r.onload=ev=>bild.src=ev.target.result;
@@ -153,15 +171,12 @@ kartInput.onchange=e=>{
 };
 
 /* KLICK */
-karta.addEventListener("click", function(e){
-  if(mode !== "edit"){
-    alert("Tryck Redigera först");
-    return;
-  }
+karta.onclick=e=>{
+  if(mode!=="edit") return;
 
-  let rect = bild.getBoundingClientRect();
-  tempX = e.clientX - rect.left;
-  tempY = e.clientY - rect.top;
+  let rect=bild.getBoundingClientRect();
+  tempX=e.clientX-rect.left;
+  tempY=e.clientY-rect.top;
 
   let p=document.createElement("div");
   p.className="plats";
@@ -170,7 +185,7 @@ karta.addEventListener("click", function(e){
   karta.appendChild(p);
 
   editor.style.display="block";
-}, true);
+};
 
 /* MODE */
 function setMode(m){
@@ -180,7 +195,6 @@ function setMode(m){
 
 /* SPARA */
 function spara(){
-
   let obj={
     top:tempY,
     left:tempX,
@@ -189,67 +203,45 @@ function spara(){
     bild:null
   };
 
-  let reader=new FileReader();
-  reader.onload=e=>{
+  let r=new FileReader();
+  r.onload=e=>{
     obj.bild=e.target.result;
     bana.push(obj);
   };
 
-  reader.readAsDataURL(bildInput.files[0]);
+  r.readAsDataURL(bildInput.files[0]);
 
   editor.style.display="none";
-  fragaInput.value="";
-  svarInput.value="";
-  bildInput.value="";
 }
 
 /* SPEL */
 function startSpel(){
-  steg=0; poang=0; tid=0;
-
-  timer=setInterval(()=>{
-    tid++;
-    document.getElementById("tid").innerText=tid;
-  },1000);
-
+  steg=0;
   visaKarta();
 }
 
+/* VISA */
 function visaKarta(){
   referens.src=bana[steg].bild;
   scan.style.display="block";
 }
 
-/* SCAN */
+/* START CAMERA */
 function startScan(){
   navigator.mediaDevices.getUserMedia({
-    video:{ facingMode:{ exact:"environment"} }
+    video:{ facingMode:"environment"}
   })
-  .then(stream=>{
-    video.srcObject=stream;
+  .then(s=>{
+    video.srcObject=s;
     scanning=true;
     liveScan();
-  })
-  .catch(()=>{
-    navigator.mediaDevices.getUserMedia({
-      video:{ facingMode:"environment" }
-    }).then(stream=>{
-      video.srcObject=stream;
-      scanning=true;
-      liveScan();
-    });
   });
 }
 
-/* LIVE SCAN */
+/* ✅ LIVE SCAN + FÄRG */
 function liveScan(){
 
   if(!scanning) return;
-
-  if(!video.videoWidth){
-    setTimeout(liveScan,300);
-    return;
-  }
 
   let canvas=document.createElement("canvas");
   let ctx=canvas.getContext("2d");
@@ -258,38 +250,50 @@ function liveScan(){
   canvas.height=100;
 
   ctx.drawImage(video,0,0,100,100);
-  let elevData=ctx.getImageData(0,0,100,100).data;
+  let elev=ctx.getImageData(0,0,100,100).data;
 
   let img=new Image();
   img.src=referens.src;
 
   img.onload=function(){
 
-    let canvas2=document.createElement("canvas");
-    let ctx2=canvas2.getContext("2d");
+    let c2=document.createElement("canvas");
+    let x=c2.getContext("2d");
 
-    canvas2.width=100;
-    canvas2.height=100;
+    c2.width=100;
+    c2.height=100;
 
-    ctx2.drawImage(img,0,0,100,100);
-    let refData=ctx2.getImageData(0,0,100,100).data;
+    x.drawImage(img,0,0,100,100);
+    let ref=x.getImageData(0,0,100,100).data;
 
     let diff=0;
 
-    for(let i=0;i<elevData.length;i+=4){
-      diff += Math.abs(elevData[i]-refData[i]);
-      diff += Math.abs(elevData[i+1]-refData[i+1]);
-      diff += Math.abs(elevData[i+2]-refData[i+2]);
+    for(let i=0;i<elev.length;i+=4){
+      diff += Math.abs(elev[i]-ref[i]);
+      diff += Math.abs(elev[i+1]-ref[i+1]);
+      diff += Math.abs(elev[i+2]-ref[i+2]);
     }
 
     let max=100*100*255*3;
-    let procent=Math.round((1-diff/max)*100);
+    let p=Math.round((1-diff/max)*100);
 
-    if(procent > 90){
+    percentText.innerText = p + "%";
 
-      alert("✅ ScanMatch ("+procent+"%)");
+    /* ✅ FÄRGER */
+    if(p < 70){
+      targetBox.style.borderColor="red";
+    } else if(p < 90){
+      targetBox.style.borderColor="yellow";
+    } else {
+      targetBox.style.borderColor="lime";
+    }
+
+    /* ✅ KLAR */
+    if(p > 90){
 
       scanning=false;
+
+      alert("✅ ScanMatch ("+p+"%)");
 
       scan.style.display="none";
       fragaRuta.style.display="block";
@@ -305,22 +309,16 @@ function liveScan(){
 /* SVAR */
 function kolla(){
   if(svarElever.value.toLowerCase()===bana[steg].svar.toLowerCase()){
-    poang++;
-    document.getElementById("poang").innerText=poang;
-
     steg++;
-
     if(steg<bana.length){
       visaKarta();
-    }else{
-      clearInterval(timer);
-      alert("🎉 Klar! Tid: "+tid+" sek");
+    } else {
+      alert("🎉 Klar!");
     }
-  } else {
-    feedback.innerText="Fel";
-  }
+  } else feedback.innerText="Fel!";
 }
 </script>
 
 </body>
 </html>
+``
