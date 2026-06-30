@@ -42,7 +42,58 @@ body{
   background:rgba(0,0,0,0.6);
 }
 
+/* ✅ MOBIL EDITOR */
+#editor{
+  width:95%;
+  max-width:500px;
+  margin:20px auto;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+/* INPUTS */
+input{
+  width:100%;
+  padding:14px;
+  font-size:16px;
+  border-radius:10px;
+  border:none;
+  box-sizing:border-box;
+}
+
+/* BUTTON + LABEL */
+button, label{
+  width:100%;
+  padding:14px;
+  font-size:16px;
+  border-radius:10px;
+  margin:5px auto;
+}
+
+label{ background:#3498db; }
+button{ background:#2ecc71; border:none; }
+
+/* PREVIEW */
+#preview{
+  width:100%;
+  max-width:250px;
+  margin:10px auto;
+  border-radius:12px;
+  display:none;
+}
+
 /* LISTA */
+#fragaLista{
+  width:95%;
+  max-width:500px;
+  margin:20px auto;
+  background:#111;
+  padding:10px;
+  border-radius:10px;
+  text-align:left;
+}
+
 .rad{
   display:flex;
   justify-content:space-between;
@@ -54,28 +105,24 @@ body{
   border-radius:8px;
 }
 
-#fragaLista{
-  width:90%;
-  max-width:400px;
-  margin:20px auto;
-  background:#111;
-  padding:10px;
-  border-radius:10px;
-  text-align:left;
+.rad p{
+  margin:4px 0;
 }
 
 /* SCAN */
 .scanBox{
-  width:90%;
+  width:95%;
   max-width:420px;
   margin:20px auto;
 }
 
-video, .scanBox img{
+.scanBox img,
+.scanBox video{
   width:100%;
   border-radius:12px;
 }
 
+/* VISNING */
 #editor,#scan,#fragaRuta{display:none;}
 </style>
 </head>
@@ -96,22 +143,25 @@ video, .scanBox img{
 
 <p id="antal">Punkter: 0</p>
 
-<!-- EDIT -->
+<!-- EDITOR -->
 <div id="editor">
-  <label id="bildLabel" for="bildInput">📷 Skapa referensbild</label>
-  <input type="file" id="bildInput" hidden>
-  <img id="preview">
 
-  <input id="fragaInput" placeholder="Fråga">
-  <input id="svarInput" placeholder="Svar">
+<label id="bildLabel" for="bildInput">📷 Skapa referensbild</label>
+<input type="file" id="bildInput" hidden>
 
-  <button onclick="sparaPunkt()">Spara punkt</button>
-  <button onclick="laggTillFraga()">➕ Lägg till fråga</button>
+<img id="preview">
+
+<input id="fragaInput" placeholder="Fråga">
+<input id="svarInput" placeholder="Svar">
+
+<button onclick="sparaPunkt()">Spara punkt</button>
+<button onclick="laggTillFraga()">➕ Lägg till fråga</button>
+
 </div>
 
 <div id="fragaLista"></div>
 
-<!-- ✅ SCAN (tillbaka) -->
+<!-- SCAN -->
 <div id="scan">
   <div class="scanBox">
     <img id="referens">
@@ -124,13 +174,6 @@ video, .scanBox img{
   <button onclick="startScan()">Scanna</button>
 </div>
 
-<!-- FRÅGA -->
-<div id="fragaRuta">
-  <h3 id="fragaText"></h3>
-  <input id="svarElev">
-  <button onclick="kollaSvar()">Svara</button>
-</div>
-
 <script>
 let bana=[];
 let mode="none";
@@ -140,13 +183,20 @@ let aktuellPunktIndex=null;
 let referensBild=null;
 
 let steg=0;
-let scanning=false;
-
-let aktuellKontroll=null;
-let aktuellFragaIndex=0;
 
 let kartInput=document.getElementById("kartInput");
 let bild=document.getElementById("bild");
+
+/* LABEL */
+function uppdateraBildLabel(){
+  let text="📷 Skapa referensbild";
+  if(aktuellPunktIndex===null){
+    text+=" till punkt "+(bana.length+1);
+  } else {
+    text+=" till punkt "+(aktuellPunktIndex+1);
+  }
+  bildLabel.innerText=text;
+}
 
 /* KARTA */
 kartInput.onchange=e=>{
@@ -183,6 +233,9 @@ bild.onclick=e=>{
   bildWrapper.appendChild(p);
 
   editor.style.display="block";
+  aktuellPunktIndex=null;
+
+  uppdateraBildLabel();
 };
 
 /* LISTA */
@@ -196,11 +249,9 @@ function visaFragaLista(){
     html+="<div class='rad'>";
 
     html+="<div>";
-
     punkt.fragaLista.forEach((f,i)=>{
       html+="<p>"+(i+1)+". "+f.fraga+"</p>";
     });
-
     html+="</div>";
 
     if(punkt.bild){
@@ -228,23 +279,33 @@ function sparaPunkt(){
 
   antal.innerText="Punkter: "+bana.length;
 
+  fragaInput.value="";
+  svarInput.value="";
+
   visaFragaLista();
+  uppdateraBildLabel();
 }
 
 /* LÄGG TILL */
 function laggTillFraga(){
 
-  if(aktuellPunktIndex===null) return;
+  if(aktuellPunktIndex===null){
+    alert("Skapa punkt först");
+    return;
+  }
 
   bana[aktuellPunktIndex].fragaLista.push({
     fraga:fragaInput.value,
     svar:svarInput.value
   });
 
+  fragaInput.value="";
+  svarInput.value="";
+
   visaFragaLista();
 }
 
-/* ✅ SPEL FAKTISKT FUNKAR NU */
+/* SPEL */
 function startSpel(){
 
   if(bana.length===0){
@@ -261,33 +322,22 @@ function startSpel(){
   steg=0;
 
   referens.src=bana[0].bild;
-
   scan.style.display="block";
 }
 
-/* ✅ KAMERA */
+/* KAMERA */
 function startScan(){
-
   navigator.mediaDevices.getUserMedia({
     video:{facingMode:"environment"}
   })
   .then(s=>{
     video.srcObject=s;
+  })
+  .catch(()=>{
+    alert("Tillåt kamera");
   });
 }
-
-/* ✅ FRÅGOR */
-function visaFraga(){
-
-  scan.style.display="none";
-  fragaRuta.style.display="block";
-
-  let f=aktuellKontroll.fragaLista[aktuellFragaIndex];
-  fragaText.innerText=f.fraga;
-}
-
 </script>
 
 </body>
 </html>
-``
