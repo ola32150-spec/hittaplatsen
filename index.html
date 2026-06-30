@@ -13,6 +13,14 @@ body{
   font-family:Arial;
 }
 
+/* KARTA */
+#bild{
+  width:100%;
+  max-width:500px;
+  margin:20px auto;
+  display:block;
+}
+
 /* SPEL-LAYOUT */
 #spelContainer{
   display:flex;
@@ -20,30 +28,6 @@ body{
   align-items:flex-start;
   gap:20px;
   flex-wrap:wrap;
-}
-
-/* KARTA */
-#bildWrapper{
-  position:relative;
-}
-
-#bild{
-  width:100%;
-  max-width:500px;
-}
-
-/* PUNKTER */
-.plats{
-  position:absolute;
-  width:26px;
-  height:26px;
-  border:3px solid red;
-  border-radius:50%;
-  transform:translate(-50%,-50%);
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  background:rgba(0,0,0,0.6);
 }
 
 /* INFO */
@@ -58,8 +42,9 @@ button{
   border:none;
   border-radius:10px;
   background:#2ecc71;
-  width:100%;
-  margin-top:10px;
+  width:90%;
+  max-width:300px;
+  margin:10px auto;
 }
 
 label{
@@ -68,7 +53,7 @@ label{
   padding:12px;
   border-radius:10px;
   width:90%;
-  max-width:400px;
+  max-width:300px;
   margin:10px auto;
 }
 
@@ -95,7 +80,7 @@ video, img{
 }
 
 /* GÖM */
-#scan,#fragaRuta,#spelUI{display:none;}
+#spelUI,#scan,#fragaRuta{display:none;}
 
 </style>
 </head>
@@ -104,21 +89,21 @@ video, img{
 
 <h2>Kartjakten</h2>
 
-<!-- ✅ FIXAD UPLOAD -->
+<!-- ✅ ENDAST EN KNAPP -->
 <label for="kartInput">📍 Ladda upp karta</label>
-<input type="file" id="kartInput" accept="image/*">
+<input type="file" id="kartInput" accept="image/*" style="display:none;">
 
-<button id="editBtn" onclick="mode='edit'">Redigera</button>
 <button id="playBtn" onclick="startSpel()">Spela</button>
+
+<!-- ✅ KARTA -->
+
 
 <!-- SPEL -->
 <div id="spelUI">
 
 <div id="spelContainer">
 
-  <div id="bildWrapper">
-    <img id="bild">
-  </div>
+  <img id="spelBild">
 
   <div id="infoBox">
     <h3>Hitta platsen</h3>
@@ -129,8 +114,6 @@ video, img{
 </div>
 
 </div>
-
-<p id="antal">Punkter: 0</p>
 
 <!-- SCAN -->
 <div id="scan">
@@ -154,64 +137,71 @@ video, img{
 </div>
 
 <script>
-let bana=[];
-let mode="none";
-let steg=0;
-let scanning=false;
 
-let aktuellKontroll=null;
-let aktuellFragaIndex=0;
+// ✅ DATA
+let bana = [{
+  bild:null,
+  fragaLista:[{fraga:"Testfråga", svar:"test"}]
+}];
 
-let kartInput=document.getElementById("kartInput");
-let bild=document.getElementById("bild");
+let steg = 0;
+let scanning = false;
 
-/* ✅ KRITISK FIX: robust bildladdning */
-kartInput.onchange = function(e){
+let aktuellKontroll = null;
+let aktuellFragaIndex = 0;
+
+let bild = document.getElementById("bild");
+let spelBild = document.getElementById("spelBild");
+
+/* ✅ STABIL LADDNING */
+document.getElementById("kartInput").addEventListener("change", function(e){
 
   let file = e.target.files[0];
-
   if(!file) return;
 
   let reader = new FileReader();
 
-  reader.onload = function(event){
-    bild.src = event.target.result;
+  reader.onload = function(ev){
+
+    bild.src = ev.target.result;
+
+    /* ✅ Spara till spelet */
+    bana[0].bild = ev.target.result;
+
+    console.log("✅ Kartbild laddad");
+
   };
 
   reader.readAsDataURL(file);
-};
+});
 
-/* SPEL */
+/* ✅ SPEL START */
 function startSpel(){
 
-  if(bana.length===0){
-    alert("Skapa bana först!");
+  if(!bana[0].bild){
+    alert("Ladda karta först!");
     return;
   }
 
-  mode="play";
-
   document.querySelector("label").style.display="none";
-  kartInput.style.display="none";
-  editBtn.style.display="none";
   playBtn.style.display="none";
 
   spelUI.style.display="block";
 
-  steg=0;
-  bild.src=bana[steg].bild;
+  steg = 0;
+
+  spelBild.src = bana[steg].bild;
 }
 
-/* VISA SCAN */
+/* ✅ KNAPP */
 function visaScan(){
-
   spelUI.style.display="none";
   scan.style.display="block";
 
-  referens.src=bana[steg].bild;
+  referens.src = bana[steg].bild;
 }
 
-/* SCAN */
+/* ✅ SCAN */
 function startScan(){
 
   navigator.mediaDevices.getUserMedia({
@@ -228,7 +218,7 @@ function startScan(){
   });
 }
 
-/* LIVE SCAN */
+/* ✅ LIVE SCAN */
 function liveScan(){
 
   if(!scanning) return;
@@ -287,8 +277,9 @@ function liveScan(){
   };
 }
 
-/* FRÅGA */
+/* ✅ FRÅGA */
 function visaFraga(){
+
   scan.style.display="none";
   fragaRuta.style.display="block";
 
