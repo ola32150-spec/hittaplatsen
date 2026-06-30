@@ -26,7 +26,7 @@ body{
   max-width:500px;
 }
 
-/* NUMRERADE PUNKTER */
+/* PUNKTER */
 .plats{
   position:absolute;
   width:26px;
@@ -87,6 +87,14 @@ button{ background:#2ecc71; border:none; }
   text-align:left;
 }
 
+#fragaLista h3{
+  margin-top:20px;
+}
+
+#fragaLista hr{
+  border:1px solid #333;
+}
+
 #editor,#scan,#fragaRuta{display:none;}
 
 #preview{
@@ -111,22 +119,21 @@ button{ background:#2ecc71; border:none; }
   <img id="bild">
 </div>
 
-<!-- ✅ ÄNDRAD TEXT -->
 <p id="antal">Punkter: 0</p>
 
 <!-- EDITOR -->
 <div id="editor">
 
-  <label id="bildLabel" for="bildInput">📷 Skapa referensbild</label>
-  <input type="file" id="bildInput" hidden>
+<label id="bildLabel" for="bildInput">📷 Skapa referensbild</label>
+<input type="file" id="bildInput" hidden>
 
-  <img id="preview">
+<img id="preview">
 
-  <input id="fragaInput" placeholder="Fråga"><br><br>
-  <input id="svarInput" placeholder="Svar"><br>
+<input id="fragaInput" placeholder="Fråga"><br><br>
+<input id="svarInput" placeholder="Svar"><br>
 
-  <button onclick="sparaPunkt()">Spara punkt</button>
-  <button onclick="laggTillFraga()">➕ Lägg till fråga</button>
+<button onclick="sparaPunkt()">Spara punkt</button>
+<button onclick="laggTillFraga()">➕ Lägg till fråga</button>
 
 </div>
 
@@ -134,37 +141,25 @@ button{ background:#2ecc71; border:none; }
 
 <!-- SCAN -->
 <div id="scan">
-  <div class="scanBox">
-    <img id="referens">
-  </div>
-
-  <div class="scanBox">
-    <video id="video" autoplay playsinline></video>
-    <div id="percent">0%</div>
-  </div>
-
-  <button onclick="startScan()">Scanna</button>
+<div class="scanBox">
+<img id="referens">
 </div>
 
-<!-- FRÅGA -->
-<div id="fragaRuta">
-  <h3 id="fragaText"></h3>
-  <input id="svarElev"><br><br>
-  <button onclick="kollaSvar()">Svara</button>
+<div class="scanBox">
+<video id="video" autoplay playsinline></video>
+<div id="percent">0%</div>
+</div>
+
+<button onclick="startScan()">Scanna</button>
 </div>
 
 <script>
-let bana=[], mode="none";
+let bana=[];
+let mode="none";
 let tempX,tempY;
 
-let referensBild=null;
 let aktuellPunktIndex=null;
-
-let steg=0;
-let scanning=false;
-
-let aktuellKontroll=null;
-let aktuellFragaIndex=0;
+let referensBild=null;
 
 let kartInput=document.getElementById("kartInput");
 let bild=document.getElementById("bild");
@@ -198,7 +193,7 @@ bildInput.onchange=e=>{
   r.readAsDataURL(e.target.files[0]);
 };
 
-/* KLICK */
+/* KLICK KARTA */
 bild.onclick=e=>{
   if(mode!=="edit") return;
 
@@ -214,28 +209,37 @@ bild.onclick=e=>{
 
   bildWrapper.appendChild(p);
 
-  aktuellPunktIndex=null;
   editor.style.display="block";
-  fragaLista.innerHTML="";
+  aktuellPunktIndex=null;
 
   uppdateraBildLabel();
 };
 
-/* LISTA */
+/* ✅ NY LISTA – VISAR ALLA PUNKTER */
 function visaFragaLista(){
-  if(aktuellPunktIndex===null) return;
 
-  let punkt=bana[aktuellPunktIndex];
-  let html="<h3>Punkt "+(aktuellPunktIndex+1)+"</h3>";
+  if(bana.length===0){
+    fragaLista.innerHTML="";
+    return;
+  }
 
-  punkt.fragaLista.forEach((f,i)=>{
-    html+="<p>"+(i+1)+". "+f.fraga+"</p>";
+  let html="";
+
+  bana.forEach((punkt,index)=>{
+
+    html+="<h3>Punkt "+(index+1)+"</h3>";
+
+    punkt.fragaLista.forEach((f,i)=>{
+      html+="<p>"+(i+1)+". "+f.fraga+"</p>";
+    });
+
+    html+="<hr>";
   });
 
   fragaLista.innerHTML=html;
 }
 
-/* SPARA */
+/* SPARA PUNKT */
 function sparaPunkt(){
 
   let obj={
@@ -248,7 +252,6 @@ function sparaPunkt(){
   bana.push(obj);
   aktuellPunktIndex=bana.length-1;
 
-  /* ✅ ÄNDRAD TEXT */
   antal.innerText="Punkter: "+bana.length;
 
   fragaInput.value="";
@@ -258,7 +261,7 @@ function sparaPunkt(){
   uppdateraBildLabel();
 }
 
-/* LÄGG TILL */
+/* LÄGG TILL FRÅGA */
 function laggTillFraga(){
 
   if(aktuellPunktIndex===null){
@@ -275,58 +278,6 @@ function laggTillFraga(){
   svarInput.value="";
 
   visaFragaLista();
-}
-
-/* SPEL */
-function startSpel(){
-
-  if(bana.length===0){
-    alert("Skapa bana först!");
-    return;
-  }
-
-  mode="play";
-
-  editor.style.display="none";
-  kartLabel.style.display="none";
-  editBtn.style.display="none";
-  playBtn.style.display="none";
-  fragaLista.style.display="none";
-
-  steg=0;
-  referens.src=bana[0].bild;
-
-  scan.style.display="block";
-}
-
-/* SCAN */
-function startScan(){
-
-  navigator.mediaDevices.getUserMedia({
-    video:{facingMode:{ideal:"environment"}},
-    audio:false
-  })
-  .then(stream=>{
-    video.srcObject=stream;
-
-    video.onloadedmetadata=()=>{
-      video.play();
-      scanning=true;
-      liveScan();
-    };
-  })
-  .catch(()=>{
-    alert("Tillåt kamera för att scanna");
-  });
-}
-
-/* FRÅGOR */
-function visaFraga(){
-  scan.style.display="none";
-  fragaRuta.style.display="block";
-
-  let f=aktuellKontroll.fragaLista[aktuellFragaIndex];
-  fragaText.innerText="Punkt "+(steg+1)+": "+f.fraga;
 }
 </script>
 
