@@ -169,7 +169,7 @@ bildInput.onchange=e=>{
   r.readAsDataURL(file);
 };
 
-/* KLICK PÅ KARTA */
+/* ✅ KLICK = NY PUNKT (MEN INGET RESET BRYTER LOGIKEN) */
 karta.onclick=e=>{
   if(mode!=="edit")return;
 
@@ -184,19 +184,21 @@ karta.onclick=e=>{
 
   karta.appendChild(p);
 
-  /* ✅ NY PUNKT → reset */
   aktuellPunktIndex=null;
-  referensBild=null;
-  preview.style.display="none";
 
   editor.style.display="block";
 };
 
-/* ✅ SPARA PUNKT (STÄNGER EJ EDITOR) */
+/* ✅ SKAPA NY PUNKT */
 function sparaPunkt(){
 
   if(!referensBild){
     alert("Välj bild först");
+    return;
+  }
+
+  if(!fragaInput.value || !svarInput.value){
+    alert("Skriv fråga och svar");
     return;
   }
 
@@ -214,22 +216,22 @@ function sparaPunkt(){
 
   bana.push(obj);
 
+  /* ✅ KRITISKT: SÄTT AKTIV PUNKT */
   aktuellPunktIndex = bana.length - 1;
 
   antal.innerText="Kontroller: "+bana.length;
 
-  /* ✅ töm bara fälten */
   fragaInput.value="";
   svarInput.value="";
 
-  alert("✅ Punkt skapad – lägg till fler frågor!");
+  alert("✅ Punkt skapad – fortsätt lägga frågor!");
 }
 
-/* ✅ LÄGG TILL FLERA FRÅGOR */
+/* ✅ LÄGG FRÅGA PÅ SAMMA PUNKT */
 function laggTillFraga(){
 
-  if(aktuellPunktIndex === null){
-    alert("Skapa punkt först!");
+  if(aktuellPunktIndex === null || !bana[aktuellPunktIndex]){
+    alert("❗ Du måste först skapa punkten");
     return;
   }
 
@@ -251,7 +253,7 @@ function laggTillFraga(){
   alert("✅ Fråga tillagd på samma punkt");
 }
 
-/* START SPEL */
+/* SPEL */
 function startSpel(){
 
   if(bana.length===0){
