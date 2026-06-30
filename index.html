@@ -13,7 +13,6 @@ body{
   font-family:Arial;
 }
 
-/* KARTA */
 #bildWrapper{
   position:relative;
   width:fit-content;
@@ -23,10 +22,8 @@ body{
 #bild{
   width:100%;
   max-width:500px;
-  display:block;
 }
 
-/* PUNKT */
 .plats{
   position:absolute;
   width:24px;
@@ -37,41 +34,29 @@ body{
   display:flex;
   align-items:center;
   justify-content:center;
-  background:rgba(0,0,0,0.6);
   color:white;
+  background:black;
   font-size:12px;
 }
 
-/* EDITOR */
-#editor{
-  width:90%;
-  max-width:400px;
-  margin:10px auto;
-}
-
 input{
-  width:100%;
+  width:90%;
   padding:12px;
-  margin:5px 0;
+  margin:5px;
   border-radius:10px;
-  border:none;
 }
 
-/* KNAPPAR */
 button, label{
   padding:12px;
-  border:none;
-  border-radius:10px;
-  margin:5px auto;
-  display:block;
+  margin:5px;
   width:90%;
-  max-width:400px;
+  border-radius:10px;
+  border:none;
 }
 
-label{ background:#3498db; }
-button{ background:#2ecc71; }
+label{background:#3498db;}
+button{background:#2ecc71;}
 
-/* SCAN */
 .scanBox{
   width:90%;
   max-width:300px;
@@ -79,7 +64,7 @@ button{ background:#2ecc71; }
   position:relative;
 }
 
-video, img{
+video,img{
   width:100%;
 }
 
@@ -100,7 +85,6 @@ video, img{
 
 <h2>Kartjakten</h2>
 
-<!-- ✅ KARTA -->
 <label for="kartInput">📍 Ladda upp karta</label>
 <input type="file" id="kartInput" accept="image/*">
 
@@ -108,278 +92,263 @@ video, img{
 <button onclick="startSpel()">Spela</button>
 
 <div id="bildWrapper">
-  <img id="bild">
-</div>
-
-<p id="antal">Punkter: 0</p>
-
-<!-- ✅ EDITOR -->
-<div id="editor">
-
-<label id="bildLabel" for="bildInput">📷 Skapa referensbild</label>
-<input type="file" id="bildInput">
-
 <input id="fragaInput" placeholder="Fråga">
 <input id="svarInput" placeholder="Svar">
 
 <button onclick="sparaPunkt()">Spara punkt</button>
-<button onclick="laggTillFraga()">➕ Lägg till fråga</button>
-
+<button onclick="laggTillFraga()">➕ Lägg fråga</button>
 </div>
 
-<!-- ✅ SPEL -->
 <div id="spelUI">
-  <h3>Hitta platsen</h3>
-  <p>Gå till rätt plats på kartan</p>
-  <button onclick="visaScan()">Jag är här nu</button>
+<h3>Hitta platsen</h3>
+<p id="spelProgress"></p>
+<button onclick="visaScan()">Jag är här nu</button>
 </div>
 
-<!-- ✅ SCAN -->
 <div id="scan">
-  <div class="scanBox">
-    <img id="referens">
-  </div>
 
-  <div class="scanBox">
-    <video id="video" autoplay playsinline></video>
-    <div id="percent">0%</div>
-  </div>
-
-  <button onclick="startScan()">Scanna</button>
+<div class="scanBox">
+<img id="referens">
 </div>
 
-<!-- ✅ FRÅGA -->
+<div class="scanBox">
+<video id="video" autoplay playsinline></video>
+<div id="percent">0%</div>
+</div>
+
+<button onclick="startScan()">Scanna</button>
+</div>
+
 <div id="fragaRuta">
-  <h3 id="fragaText"></h3>
-  <input id="svarElev">
-  <button onclick="kollaSvar()">Svara</button>
+<p id="progressText"></p>
+<h3 id="fragaText"></h3>
+<input id="svarElev">
+<button onclick="kollaSvar()">Svara</button>
 </div>
 
 <script>
-let bana=[], mode="none";
-let tempX,tempY;
-let aktuellIndex=null;
-let referensBild=null;
+let bana=[], mode="none", tempX,tempY;
+let aktuellIndex=null, referensBild=null;
 
-let steg=0;
-let scanning=false;
+let steg=0, scanning=false;
+let aktuellKontroll=null, aktuellFragaIndex=0;
 
-let aktuellKontroll=null;
-let aktuellFragaIndex=0;
-
-/* ✅ Ladda karta */
+/* Ladda karta */
 kartInput.onchange=e=>{
-  let file=e.target.files[0];
-  if(!file) return;
-
-  let r=new FileReader();
-  r.onload=ev=>{
-    bild.src=ev.target.result;
-  };
-  r.readAsDataURL(file);
+let r=new FileReader();
+r.onload=ev=>bild.src=ev.target.result;
+r.readAsDataURL(e.target.files[0]);
 };
 
-/* ✅ Klick karta */
+/* Klick karta */
 bild.onclick=e=>{
-  if(mode!=="edit") return;
+if(mode!=="edit") return;
 
-  let rect=bild.getBoundingClientRect();
-  tempX=e.clientX-rect.left;
-  tempY=e.clientY-rect.top;
+let rect=bild.getBoundingClientRect();
+tempX=e.clientX-rect.left;
+tempY=e.clientY-rect.top;
 
-  let p=document.createElement("div");
-  p.className="plats";
-  p.style.left=tempX+"px";
-  p.style.top=tempY+"px";
-  p.innerText=bana.length+1;
+let p=document.createElement("div");
+p.className="plats";
+p.style.left=tempX+"px";
+p.style.top=tempY+"px";
+p.innerText=bana.length+1;
 
-  bildWrapper.appendChild(p);
+bildWrapper.appendChild(p);
 
-  editor.style.display="block";
-  aktuellIndex=null;
-  uppdateraBildLabel();
+editor.style.display="block";
+aktuellIndex=null;
+
+uppdateraBildLabel();
 };
 
-/* ✅ Referensbild */
+/* Referensbild */
 bildInput.onchange=e=>{
-  let r=new FileReader();
-  r.onload=ev=>{
-    referensBild=ev.target.result;
-  };
-  r.readAsDataURL(e.target.files[0]);
+let r=new FileReader();
+r.onload=ev=>referensBild=ev.target.result;
+r.readAsDataURL(e.target.files[0]);
 };
 
-/* ✅ Dynamisk label */
+/* Dynamisk label */
 function uppdateraBildLabel(){
-  let text="📷 Skapa referensbild";
+let text="📷 Skapa referensbild";
 
-  if(aktuellIndex===null){
-    text+=" till punkt "+(bana.length+1);
-  } else {
-    text+=" till punkt "+(aktuellIndex+1);
-  }
-
-  bildLabel.innerText=text;
+if(aktuellIndex===null){
+text+=" till punkt "+(bana.length+1);
+}else{
+text+=" till punkt "+(aktuellIndex+1);
 }
 
-/* ✅ Spara punkt */
+bildLabel.innerText=text;
+}
+
+/* Spara punkt */
 function sparaPunkt(){
+bana.push({
+bild:referensBild,
+fragaLista:[{
+fraga:fragaInput.value,
+svar:svarInput.value
+}]
+});
 
-  bana.push({
-    bild:referensBild,
-    fragaLista:[{
-      fraga:fragaInput.value,
-      svar:svarInput.value
-    }]
-  });
+aktuellIndex=bana.length-1;
+antal.innerText="Punkter: "+bana.length;
 
-  aktuellIndex=bana.length-1;
+fragaInput.value="";
+svarInput.value="";
 
-  antal.innerText="Punkter: "+bana.length;
-
-  fragaInput.value="";
-  svarInput.value="";
-
-  uppdateraBildLabel();
+uppdateraBildLabel();
 }
 
-/* ✅ Lägg fråga */
+/* Lägg fråga */
 function laggTillFraga(){
-
-  if(aktuellIndex===null){
-    alert("Skapa punkt först");
-    return;
-  }
-
-  bana[aktuellIndex].fragaLista.push({
-    fraga:fragaInput.value,
-    svar:svarInput.value
-  });
-
-  fragaInput.value="";
-  svarInput.value="";
-
-  uppdateraBildLabel();
+if(aktuellIndex===null){
+alert("Skapa punkt först");
+return;
 }
 
-/* ✅ Spel */
+bana[aktuellIndex].fragaLista.push({
+fraga:fragaInput.value,
+svar:svarInput.value
+});
+
+fragaInput.value="";
+svarInput.value="";
+}
+
+/* Start spel */
 function startSpel(){
-
-  if(bana.length===0){
-    alert("Skapa bana först!");
-    return;
-  }
-
-  mode="play";
-
-  editor.style.display="none";
-  kartInput.style.display="none";
-
-  steg=0;
-
-  spelUI.style.display="block";
+if(bana.length===0){
+alert("Skapa bana först!");
+return;
 }
 
-/* ✅ Visa scan */
+mode="play";
+
+editor.style.display="none";
+kartInput.style.display="none";
+
+spelUI.style.display="block";
+
+steg=0;
+spelProgress.innerText="Punkt 1 av "+bana.length;
+}
+
+/* Visa scan */
 function visaScan(){
-  spelUI.style.display="none";
-  scan.style.display="block";
-
-  referens.src=bana[steg].bild;
+spelUI.style.display="none";
+scan.style.display="block";
+referens.src=bana[steg].bild;
 }
 
-/* ✅ Scan */
+/* Start scan */
 function startScan(){
+navigator.mediaDevices.getUserMedia({
+video:{facingMode:"environment"}
+})
+.then(s=>{
+video.srcObject=s;
 
-  navigator.mediaDevices.getUserMedia({
-    video:{facingMode:"environment"}
-  })
-  .then(stream=>{
-    video.srcObject=stream;
-
-    video.onloadedmetadata=()=>{
-      video.play();
-      scanning=true;
-      liveScan();
-    };
-  });
+video.onloadedmetadata=()=>{
+video.play();
+scanning=true;
+liveScan();
+};
+});
 }
 
-/* ✅ Scan loop */
+/* Scan loop */
 function liveScan(){
+if(!scanning) return;
 
-  if(!scanning) return;
+let c=document.createElement("canvas");
+let ctx=c.getContext("2d");
 
-  let c=document.createElement("canvas");
-  let ctx=c.getContext("2d");
+c.width=100;
+c.height=100;
 
-  c.width=100;
-  c.height=100;
+ctx.drawImage(video,0,0,100,100);
+let elev=ctx.getImageData(0,0,100,100).data;
 
-  ctx.drawImage(video,0,0,100,100);
-  let elev=ctx.getImageData(0,0,100,100).data;
+let img=new Image();
+img.src=referens.src;
 
-  let img=new Image();
-  img.src=referens.src;
+img.onload=()=>{
 
-  img.onload=()=>{
+let c2=document.createElement("canvas");
+let ctx2=c2.getContext("2d");
 
-    let c2=document.createElement("canvas");
-    let ctx2=c2.getContext("2d");
+c2.width=100;
+c2.height=100;
 
-    c2.width=100;
-    c2.height=100;
+ctx2.drawImage(img,0,0,100,100);
+let ref=ctx2.getImageData(0,0,100,100).data;
 
-    ctx2.drawImage(img,0,0,100,100);
-    let ref=ctx2.getImageData(0,0,100,100).data;
-
-    let diff=0;
-
-    for(let i=0;i<elev.length;i+=4){
-      diff+=Math.abs(elev[i]-ref[i]);
-    }
-
-    let max=100*100*255;
-    let p=Math.round((1-diff/max)*100);
-
-    percent.innerText=p+"%";
-
-    if(p>85){
-
-      scanning=false;
-
-      aktuellKontroll=bana[steg];
-      aktuellFragaIndex=0;
-
-      visaFraga();
-      return;
-    }
-
-    setTimeout(liveScan,300);
-  };
+let diff=0;
+for(let i=0;i<elev.length;i+=4){
+diff+=Math.abs(elev[i]-ref[i]);
 }
 
-/* ✅ Visa fråga */
+let max=100*100*255;
+let p=Math.round((1-diff/max)*100);
+
+percent.innerText=p+"%";
+
+if(p>85){
+scanning=false;
+aktuellKontroll=bana[steg];
+aktuellFragaIndex=0;
+visaFraga();
+return;
+}
+
+setTimeout(liveScan,300);
+};
+}
+
+/* Visa fråga */
 function visaFraga(){
+scan.style.display="none";
+fragaRuta.style.display="block";
 
-  scan.style.display="none";
-  fragaRuta.style.display="block";
+let f=aktuellKontroll.fragaLista[aktuellFragaIndex];
 
-  let f=aktuellKontroll.fragaLista[aktuellFragaIndex];
-  fragaText.innerText=f.fraga;
+progressText.innerText =
+"Punkt "+(steg+1)+" av "+bana.length+
+" • Fråga "+(aktuellFragaIndex+1)+" av "+aktuellKontroll.fragaLista.length;
+
+fragaText.innerText=f.fraga;
 }
 
-/* ✅ Svar */
+/* Svar */
 function kollaSvar(){
 
-  steg++;
+let f=aktuellKontroll.fragaLista[aktuellFragaIndex];
 
-  if(steg < bana.length){
-    fragaRuta.style.display="none";
-    spelUI.style.display="block";
-  } else {
-    alert("🎉 Klar!");
-  }
+if(svarElev.value.toLowerCase()===f.svar.toLowerCase()){
+
+aktuellFragaIndex++;
+
+if(aktuellFragaIndex < aktuellKontroll.fragaLista.length){
+visaFraga();
+}else{
+steg++;
+
+if(steg < bana.length){
+fragaRuta.style.display="none";
+spelUI.style.display="block";
+spelProgress.innerText="Punkt "+(steg+1)+" av "+bana.length;
+}else{
+alert("🎉 Klar!");
+}
+}
+
+}else{
+alert("❌ Fel svar");
+}
+
+svarElev.value="";
 }
 </script>
 
