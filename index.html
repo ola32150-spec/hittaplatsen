@@ -7,111 +7,96 @@
 
 <style>
 html, body {
-  background-color: #000;
-  margin: 0;
+  margin:0;
+  background:#000;
+  color:white;
+  font-family:Arial;
+  text-align:center;
 }
 
-body {
-  font-family: -apple-system, Arial;
-  color: white;
-  text-align: center;
+/* ✅ KARTA FIX */
+#karta {
+  position:relative;
 }
-
-/* TOPBAR */
-#topbar {
-  display: flex;
-  justify-content: space-between;
-  padding: 12px;
-}
-
-/* KARTA */
 #karta img {
-  width: 100%;
+  width:100%;
 }
 
-/* RING */
+/* ✅ RING */
 .plats {
-  position: absolute;
-  width: 22px;
-  height: 22px;
-  border: 3px solid red;
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
+  position:absolute;
+  width:20px;
+  height:20px;
+  border:3px solid red;
+  border-radius:50%;
+  transform:translate(-50%,-50%);
 }
 
-/* ✅ CARD */
+/* ✅ FÖNSTER */
 .card {
-  margin: 25px auto;
-  width: 90%;
-  max-width: 420px;
+  width:85%;
+  max-width:400px;
+  margin:20px auto;
 }
 
-/* =================== */
-/* ✅ KAMERA MED SIKTE */
-/* =================== */
-
-.cameraBox {
-  position: relative;
+/* ✅ VIDEO WRAPPER */
+.cameraBox{
+  position:relative;
 }
 
-#video {
-  width: 100%;
-  border-radius: 12px;
+/* VIDEO */
+video{
+  width:100%;
+  border-radius:10px;
 }
 
 /* ✅ SIKTE */
-#targetBox {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 120px;
-  height: 120px;
-  transform: translate(-50%, -50%);
-  border: 4px solid red;
-  border-radius: 10px;
+#target{
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  width:120px;
+  height:120px;
+  border:4px solid red;
+  border-radius:10px;
 }
 
-/* ✅ PROCENT TEXT */
-#percentText {
-  position: absolute;
-  bottom: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 22px;
-  font-weight: bold;
+/* ✅ PROCENT */
+#percent{
+  position:absolute;
+  bottom:10px;
+  left:50%;
+  transform:translateX(-50%);
+  font-size:22px;
 }
 
 /* BUTTON */
-button {
-  width: 90%;
-  max-width: 420px;
-  padding: 12px;
-  border-radius: 10px;
-  background: #2ecc71;
-  border: none;
-  color: white;
-  font-size: 16px;
+button{
+  width:85%;
+  max-width:400px;
+  padding:12px;
+  margin-top:10px;
+  background:#2ecc71;
+  border:none;
+  border-radius:10px;
+  color:white;
+  font-size:16px;
 }
 
-#editor, #scan, #fragaRuta {
-  display: none;
+#editor,#scan,#fragaRuta{
+  display:none;
 }
 </style>
 </head>
 
 <body>
 
-<div id="topbar">
-  ⭐ <span id="poang">0</span>
-  ⏱️ <span id="tid">0</span>s
-</div>
-
 <h2>Kartjakten</h2>
 
 <input type="file" id="kartInput">
-
-<button onclick="setMode('edit')">Redigera</button>
-<button onclick="setMode('play')">Spela</button>
+<button onclick="mode='edit'">Redigera</button>
+<button onclick="startSpel()">Spela</button>
 
 <div id="karta">
   <img id="bild">
@@ -125,25 +110,19 @@ button {
   <button onclick="spara()">Spara</button>
 </div>
 
-<!-- ✅ SCAN -->
+<!-- SCAN -->
 <div id="scan">
 
-  <h3>📸 Sikta i rutan</h3>
+  <h3>Rikta kameran</h3>
 
   <div class="card">
     <img id="referens">
   </div>
 
   <div class="card cameraBox">
-
     <video id="video" autoplay></video>
-
-    <!-- ✅ SIKTE -->
-    <div id="targetBox"></div>
-
-    <!-- ✅ LIVE PROCENT -->
-    <div id="percentText">0%</div>
-
+    <div id="target"></div>
+    <div id="percent">0%</div>
   </div>
 
   <button onclick="startScan()">Scanna</button>
@@ -153,15 +132,11 @@ button {
 <div id="fragaRuta" class="card">
   <h3 id="fragaText"></h3>
   <input id="svarElever"><br><br>
-  <button onclick="kolla()">Svara</button>
-  <p id="feedback"></p>
+  <button onclick="svara()">Svara</button>
 </div>
 
 <script>
-let bana=[], mode="none";
-let steg=0, poang=0, tid=0;
-let tempX,tempY;
-let scanning=false;
+let bana=[],mode="none",tempX,tempY,steg=0,scanning=false;
 
 /* KARTA */
 kartInput.onchange=e=>{
@@ -170,9 +145,9 @@ kartInput.onchange=e=>{
   r.readAsDataURL(e.target.files[0]);
 };
 
-/* KLICK */
+/* ✅ FIX KLICK */
 karta.onclick=e=>{
-  if(mode!=="edit") return;
+  if(mode!=="edit")return;
 
   let rect=bild.getBoundingClientRect();
   tempX=e.clientX-rect.left;
@@ -180,18 +155,12 @@ karta.onclick=e=>{
 
   let p=document.createElement("div");
   p.className="plats";
-  p.style.top=tempY+"px";
   p.style.left=tempX+"px";
-  karta.appendChild(p);
+  p.style.top=tempY+"px";
 
+  karta.appendChild(p);
   editor.style.display="block";
 };
-
-/* MODE */
-function setMode(m){
-  mode=m;
-  if(m==="play") startSpel();
-}
 
 /* SPARA */
 function spara(){
@@ -210,44 +179,41 @@ function spara(){
   };
 
   r.readAsDataURL(bildInput.files[0]);
-
   editor.style.display="none";
 }
 
 /* SPEL */
 function startSpel(){
   steg=0;
-  visaKarta();
-}
-
-/* VISA */
-function visaKarta(){
-  referens.src=bana[steg].bild;
+  referens.src=bana[0].bild;
   scan.style.display="block";
 }
 
-/* START CAMERA */
+/* START SCAN */
 function startScan(){
-  navigator.mediaDevices.getUserMedia({
-    video:{ facingMode:"environment"}
-  })
+  navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}})
   .then(s=>{
     video.srcObject=s;
     scanning=true;
-    liveScan();
+    setTimeout(liveScan,500);
   });
 }
 
-/* ✅ LIVE SCAN + FÄRG */
+/* ✅ STABIL SCAN */
 function liveScan(){
 
   if(!scanning) return;
 
-  let canvas=document.createElement("canvas");
-  let ctx=canvas.getContext("2d");
+  if(!video.videoWidth){
+    setTimeout(liveScan,300);
+    return;
+  }
 
-  canvas.width=100;
-  canvas.height=100;
+  let c=document.createElement("canvas");
+  let ctx=c.getContext("2d");
+
+  c.width=100;
+  c.height=100;
 
   ctx.drawImage(video,0,0,100,100);
   let elev=ctx.getImageData(0,0,100,100).data;
@@ -255,50 +221,41 @@ function liveScan(){
   let img=new Image();
   img.src=referens.src;
 
-  img.onload=function(){
+  img.onload=()=>{
 
     let c2=document.createElement("canvas");
-    let x=c2.getContext("2d");
+    let ctx2=c2.getContext("2d");
 
     c2.width=100;
     c2.height=100;
 
-    x.drawImage(img,0,0,100,100);
-    let ref=x.getImageData(0,0,100,100).data;
+    ctx2.drawImage(img,0,0,100,100);
+    let ref=ctx2.getImageData(0,0,100,100).data;
 
     let diff=0;
 
     for(let i=0;i<elev.length;i+=4){
-      diff += Math.abs(elev[i]-ref[i]);
-      diff += Math.abs(elev[i+1]-ref[i+1]);
-      diff += Math.abs(elev[i+2]-ref[i+2]);
+      diff+=Math.abs(elev[i]-ref[i]);
+      diff+=Math.abs(elev[i+1]-ref[i+1]);
+      diff+=Math.abs(elev[i+2]-ref[i+2]);
     }
 
     let max=100*100*255*3;
     let p=Math.round((1-diff/max)*100);
 
-    percentText.innerText = p + "%";
+    percent.innerText=p+"%";
 
-    /* ✅ FÄRGER */
-    if(p < 70){
-      targetBox.style.borderColor="red";
-    } else if(p < 90){
-      targetBox.style.borderColor="yellow";
-    } else {
-      targetBox.style.borderColor="lime";
-    }
+    /* färg */
+    if(p<70) target.style.borderColor="red";
+    else if(p<90) target.style.borderColor="yellow";
+    else target.style.borderColor="lime";
 
-    /* ✅ KLAR */
-    if(p > 90){
-
+    if(p>90){
       scanning=false;
-
-      alert("✅ ScanMatch ("+p+"%)");
-
+      alert("✅ Match "+p+"%");
       scan.style.display="none";
       fragaRuta.style.display="block";
       fragaText.innerText=bana[steg].fraga;
-
       return;
     }
 
@@ -307,18 +264,16 @@ function liveScan(){
 }
 
 /* SVAR */
-function kolla(){
-  if(svarElever.value.toLowerCase()===bana[steg].svar.toLowerCase()){
-    steg++;
-    if(steg<bana.length){
-      visaKarta();
-    } else {
-      alert("🎉 Klar!");
-    }
-  } else feedback.innerText="Fel!";
+function svara(){
+  steg++;
+  if(steg<bana.length){
+    referens.src=bana[steg].bild;
+    scan.style.display="block";
+  } else {
+    alert("Klar!");
+  }
 }
 </script>
 
 </body>
 </html>
-``
