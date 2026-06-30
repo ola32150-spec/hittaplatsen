@@ -6,98 +6,85 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-html, body {
-  margin: 0;
-  background: #000;
-  color: white;
-  font-family: Arial;
-  text-align: center;
+body{
+  background:#000;
+  color:white;
+  text-align:center;
+  font-family:Arial;
 }
 
-/* ✅ KARTA MINDRE */
-#karta {
-  position: relative;
-}
-
-#karta img {
-  width: 90%;
-  max-width: 500px;
-  margin: 20px auto;
-  display: block;
-  border-radius: 12px;
+/* KARTA */
+#karta{position:relative;}
+#karta img{
+  width:90%;
+  max-width:500px;
+  margin:20px auto;
+  display:block;
 }
 
 /* RING */
-.plats {
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  border: 3px solid red;
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
+.plats{
+  position:absolute;
+  width:20px;
+  height:20px;
+  border:3px solid red;
+  border-radius:50%;
+  transform:translate(-50%,-50%);
 }
 
-/* LABEL SOM KNAPP */
-label {
-  display: block;
-  width: 90%;
-  max-width: 420px;
-  margin: 10px auto;
-  padding: 12px;
-  background: #3498db;
-  border-radius: 10px;
-  cursor: pointer;
+/* LABEL */
+label{
+  display:block;
+  background:#3498db;
+  margin:10px auto;
+  padding:12px;
+  width:90%;
+  max-width:400px;
+  border-radius:10px;
 }
 
 /* SCAN */
-.scanBox {
-  position: relative;
-  width: 90%;
-  max-width: 420px;
-  margin: 20px auto;
+.scanBox{
+  width:90%;
+  max-width:420px;
+  margin:20px auto;
+  position:relative;
 }
 
 .scanBox img,
-.scanBox video {
-  width: 100%;
-  border-radius: 12px;
-  background: black;
+.scanBox video{
+  width:100%;
+  border-radius:12px;
 }
 
-/* PROCENT */
-#percent {
-  position: absolute;
-  bottom: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 22px;
-  font-weight: bold;
+#percent{
+  position:absolute;
+  bottom:10px;
+  left:50%;
+  transform:translateX(-50%);
 }
 
 /* BUTTON */
-button {
-  width: 90%;
-  max-width: 420px;
-  padding: 12px;
-  margin-top: 10px;
-  background: #2ecc71;
-  border: none;
-  border-radius: 10px;
-  color: white;
-  font-size: 16px;
+button{
+  width:90%;
+  max-width:400px;
+  padding:12px;
+  margin-top:10px;
+  border:none;
+  border-radius:10px;
+  background:#2ecc71;
 }
 
-/* DÖLJ */
-#editor, #scan {
-  display: none;
+/* PREVIEW */
+#preview{
+  width:90%;
+  max-width:200px;
+  margin:10px auto;
+  display:none;
+  border-radius:10px;
 }
 
-/* ELEV-LÄGE */
-.elev #kartInput,
-.elev #editBtn,
-.elev #editor {
-  display: none !important;
-}
+#editor,#scan{display:none;}
 </style>
 </head>
 
@@ -105,12 +92,11 @@ button {
 
 <h2>Kartjakten</h2>
 
-<!-- ✅ NY KNAPP -->
 <label for="kartInput">📍 Ladda upp karta</label>
-<input type="file" id="kartInput" style="display:none;">
+<input type="file" id="kartInput" hidden>
 
-<button id="editBtn" onclick="mode='edit'">Redigera</button>
-<button onclick="startElev()">Spela</button>
+<button onclick="mode='edit'">Redigera</button>
+<button onclick="startSpel()">Spela</button>
 
 <div id="karta">
   <img id="bild">
@@ -120,7 +106,10 @@ button {
 <div id="editor">
 
   <label for="bildInput">📷 Skapa referensbild</label>
-  <input type="file" id="bildInput" style="display:none;"><br><br>
+  <input type="file" id="bildInput" hidden>
+
+  <!-- ✅ NY PREVIEW -->
+  <img id="preview">
 
   <input id="fragaInput" placeholder="Fråga"><br><br>
   <input id="svarInput" placeholder="Svar"><br><br>
@@ -130,8 +119,6 @@ button {
 
 <!-- SCAN -->
 <div id="scan">
-
-  <h3>📸 Rikta kameran</h3>
 
   <div class="scanBox">
     <img id="referens">
@@ -143,38 +130,35 @@ button {
   </div>
 
   <button onclick="startScan()">Scanna</button>
-
 </div>
 
 <script>
-let bana=[], mode="none";
-let tempX,tempY;
-let steg=0;
-let scanning=false;
+let bana=[],mode="none",tempX,tempY;
+let referensBild=null;
 
-let bildInput = document.getElementById("bildInput");
-
-/* START */
-window.onload = function(){
-
-  let params = new URLSearchParams(window.location.search);
-
-  if(params.get("elev") === "1"){
-    document.body.classList.add("elev");
-  }
-
-  let data = params.get("bana");
-  if(data){
-    bana = JSON.parse(decodeURIComponent(data));
-    startSpel();
-  }
-};
-
-/* LADDA KARTA */
+/* KARTA */
 kartInput.onchange=e=>{
   let r=new FileReader();
   r.onload=ev=>bild.src=ev.target.result;
   r.readAsDataURL(e.target.files[0]);
+};
+
+/* ✅ VIKTIGT: LADDA REFERENS DIREKT */
+bildInput.onchange=e=>{
+  let file=e.target.files[0];
+  if(!file) return;
+
+  let reader=new FileReader();
+  reader.onload=function(ev){
+
+    referensBild = ev.target.result;
+
+    preview.src = referensBild;
+    preview.style.display="block";
+
+    console.log("✅ Bild redo");
+  };
+  reader.readAsDataURL(file);
 };
 
 /* KLICK */
@@ -189,16 +173,16 @@ karta.onclick=e=>{
   p.className="plats";
   p.style.left=tempX+"px";
   p.style.top=tempY+"px";
-
   karta.appendChild(p);
+
   editor.style.display="block";
 };
 
-/* ✅ FIXAD SPARA */
+/* ✅ SPARA (NU FUNKAR ALLTID) */
 function spara(){
 
-  if(!bildInput.files || !bildInput.files[0]){
-    alert("❗ Välj en referensbild först");
+  if(!referensBild){
+    alert("❗ Välj bild först");
     return;
   }
 
@@ -207,37 +191,28 @@ function spara(){
     left:tempX,
     fraga:fragaInput.value,
     svar:svarInput.value,
-    bild:null
+    bild:referensBild
   };
 
-  let reader=new FileReader();
+  bana.push(obj);
 
-  reader.onload=function(e){
-    obj.bild = e.target.result;
-
-    bana.push(obj);
-
-    console.log("✅ Sparad kontroll", obj);
-  };
-
-  reader.readAsDataURL(bildInput.files[0]);
+  console.log("✅ Sparad:", obj);
 
   editor.style.display="none";
 
+  preview.style.display="none";
+  referensBild=null;
+
   fragaInput.value="";
   svarInput.value="";
-  bildInput.value="";
-}
-
-/* START ELEV */
-function startElev(){
-  let data = encodeURIComponent(JSON.stringify(bana));
-  window.location.href = "?elev=1&bana=" + data;
 }
 
 /* SPEL */
 function startSpel(){
-  steg=0;
+  if(bana.length===0){
+    alert("Ingen bana skapad!");
+    return;
+  }
   referens.src=bana[0].bild;
   scan.style.display="block";
 }
@@ -247,15 +222,11 @@ function startScan(){
   navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}})
   .then(s=>{
     video.srcObject=s;
-    scanning=true;
-    setTimeout(liveScan,500);
+    liveScan();
   });
 }
 
-/* MATCH */
 function liveScan(){
-
-  if(!scanning) return;
 
   if(!video.videoWidth){
     setTimeout(liveScan,300);
@@ -265,10 +236,9 @@ function liveScan(){
   let c=document.createElement("canvas");
   let ctx=c.getContext("2d");
 
-  c.width=100;
-  c.height=100;
-
+  c.width=100; c.height=100;
   ctx.drawImage(video,0,0,100,100);
+
   let elev=ctx.getImageData(0,0,100,100).data;
 
   let img=new Image();
@@ -279,14 +249,12 @@ function liveScan(){
     let c2=document.createElement("canvas");
     let ctx2=c2.getContext("2d");
 
-    c2.width=100;
-    c2.height=100;
-
+    c2.width=100; c2.height=100;
     ctx2.drawImage(img,0,0,100,100);
+
     let ref=ctx2.getImageData(0,0,100,100).data;
 
     let diff=0;
-
     for(let i=0;i<elev.length;i+=4){
       diff+=Math.abs(elev[i]-ref[i]);
       diff+=Math.abs(elev[i+1]-ref[i+1]);
@@ -295,16 +263,10 @@ function liveScan(){
 
     let max=100*100*255*3;
     let p=Math.round((1-diff/max)*100);
-
     percent.innerText=p+"%";
 
     if(p>85){
-
-      scanning=false;
-
-      let data = encodeURIComponent(JSON.stringify(bana[steg]));
-      window.location.href = "./fraga.html?data=" + data;
-
+      alert("✅ Match!");
       return;
     }
 
@@ -315,4 +277,3 @@ function liveScan(){
 
 </body>
 </html>
-``
