@@ -14,15 +14,20 @@ html, body {
   text-align: center;
 }
 
-/* 🔴 KARTA */
+/* ✅ KARTA MINDRE */
 #karta {
   position: relative;
 }
+
 #karta img {
-  width: 100%;
+  width: 90%;
+  max-width: 500px;
+  margin: 20px auto;
+  display: block;
+  border-radius: 12px;
 }
 
-/* 📍 KONTROLLER */
+/* RING */
 .plats {
   position: absolute;
   width: 20px;
@@ -32,7 +37,19 @@ html, body {
   transform: translate(-50%, -50%);
 }
 
-/* 📷 SCAN-FÖNSTER */
+/* ✅ SNYGGA KNAPP-LABELS */
+label {
+  display: block;
+  width: 90%;
+  max-width: 420px;
+  margin: 10px auto;
+  padding: 12px;
+  background: #3498db;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+/* SCAN FÖNSTER */
 .scanBox {
   position: relative;
   width: 90%;
@@ -47,7 +64,7 @@ html, body {
   background: black;
 }
 
-/* 📊 PROCENT */
+/* PROCENT */
 #percent {
   position: absolute;
   bottom: 10px;
@@ -57,7 +74,7 @@ html, body {
   font-weight: bold;
 }
 
-/* 🔘 KNAPPAR */
+/* BUTTON */
 button {
   width: 90%;
   max-width: 420px;
@@ -70,12 +87,12 @@ button {
   font-size: 16px;
 }
 
-/* 🧑‍🏫 LÄRARDEL */
-#editor {
+/* DÖLJ */
+#editor, #scan {
   display: none;
 }
 
-/* 👨‍🎓 ELEV-LÄGE */
+/* ELEV-LÄGE */
 .elev #kartInput,
 .elev #editBtn,
 .elev #editor {
@@ -88,7 +105,10 @@ button {
 
 <h2>Kartjakten</h2>
 
-<input type="file" id="kartInput">
+<!-- ✅ NY TEXT -->
+<label for="kartInput">📍 Ladda upp karta</label>
+<input type="file" id="kartInput" style="display:none;">
+
 <button id="editBtn" onclick="mode='edit'">Redigera</button>
 <button onclick="startElev()">Spela</button>
 
@@ -98,9 +118,14 @@ button {
 
 <!-- EDITOR -->
 <div id="editor">
-  <input type="file" id="bildInput"><br><br>
+
+  <!-- ✅ NY TEXT -->
+  <label for="bildInput">📷 Skapa referensbild</label>
+  <input type="file" id="bildInput" style="display:none;"><br><br>
+
   <input id="fragaInput" placeholder="Fråga"><br><br>
   <input id="svarInput" placeholder="Svar"><br><br>
+
   <button onclick="spara()">Spara</button>
 </div>
 
@@ -128,17 +153,15 @@ let tempX,tempY;
 let steg=0;
 let scanning=false;
 
-/* ✅ START */
+/* START */
 window.onload = function(){
 
   let params = new URLSearchParams(window.location.search);
 
-  /* elev-läge */
   if(params.get("elev") === "1"){
     document.body.classList.add("elev");
   }
 
-  /* ladda bana */
   let data = params.get("bana");
   if(data){
     bana = JSON.parse(decodeURIComponent(data));
@@ -146,16 +169,16 @@ window.onload = function(){
   }
 };
 
-/* 🗺️ KARTA */
+/* KARTA */
 kartInput.onchange=e=>{
   let r=new FileReader();
   r.onload=ev=>bild.src=ev.target.result;
   r.readAsDataURL(e.target.files[0]);
 };
 
-/* 📍 KLICK */
+/* KLICK */
 karta.onclick=e=>{
-  if(mode!=="edit") return;
+  if(mode!=="edit")return;
 
   let rect=bild.getBoundingClientRect();
   tempX=e.clientX-rect.left;
@@ -170,7 +193,7 @@ karta.onclick=e=>{
   editor.style.display="block";
 };
 
-/* 💾 SPARA */
+/* SPARA */
 function spara(){
 
   let obj={
@@ -192,24 +215,20 @@ function spara(){
   editor.style.display="none";
 }
 
-/* 🎮 START ELEV */
+/* ELEV */
 function startElev(){
   let data = encodeURIComponent(JSON.stringify(bana));
   window.location.href = "?elev=1&bana=" + data;
 }
 
-/* 🎮 SPEL */
+/* SPEL */
 function startSpel(){
   steg=0;
-  visaKontroll();
+  referens.src=bana[0].bild;
+  scan.style.display="block";
 }
 
-function visaKontroll(){
-  referens.src = bana[steg].bild;
-  scan.style.display = "block";
-}
-
-/* 📷 SCAN */
+/* SCAN */
 function startScan(){
   navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}})
   .then(s=>{
@@ -219,7 +238,7 @@ function startScan(){
   });
 }
 
-/* ✅ MATCH → NY SIDA */
+/* MATCH */
 function liveScan(){
 
   if(!scanning) return;
@@ -282,3 +301,4 @@ function liveScan(){
 
 </body>
 </html>
+``
