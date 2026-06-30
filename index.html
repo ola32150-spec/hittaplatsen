@@ -21,7 +21,6 @@ body{
   display:block;
 }
 
-/* PUNKT */
 .plats{
   position:absolute;
   width:20px;
@@ -31,7 +30,6 @@ body{
   transform:translate(-50%,-50%);
 }
 
-/* KNAPPAR */
 label{
   display:block;
   background:#3498db;
@@ -52,7 +50,6 @@ button{
   background:#2ecc71;
 }
 
-/* SCAN */
 .scanBox{
   width:90%;
   max-width:420px;
@@ -73,21 +70,11 @@ button{
   transform:translateX(-50%);
 }
 
-/* FRÅGA */
-#fragaRuta{
-  display:none;
-}
-
-input{
-  padding:10px;
-  width:80%;
-}
-
-#editor,#scan{display:none;}
+#editor,#scan,#fragaRuta{display:none;}
 
 #preview{
   width:200px;
-  margin:10px;
+  margin:10px auto;
   display:none;
 }
 </style>
@@ -120,8 +107,8 @@ input{
   <input id="fragaInput" placeholder="Fråga"><br><br>
   <input id="svarInput" placeholder="Svar"><br>
 
-  <button onclick="spara()">Spara punkt</button>
-  <button onclick="laggTillFraga()">➕ Lägg till fler frågor</button>
+  <button onclick="sparaPunkt()">Spara punkt</button>
+  <button onclick="laggTillFraga()">➕ Lägg till fråga</button>
 
 </div>
 
@@ -148,8 +135,13 @@ input{
 </div>
 
 <script>
-let bana=[],mode="none",tempX,tempY;
+let bana=[];
+let mode="none";
+let tempX,tempY;
+
 let referensBild=null;
+
+let aktuellPunktIndex=null;
 
 let steg=0;
 let scanning=false;
@@ -164,7 +156,7 @@ kartInput.onchange=e=>{
   r.readAsDataURL(e.target.files[0]);
 };
 
-/* REFERENSBILD */
+/* REFERENS */
 bildInput.onchange=e=>{
   let file=e.target.files[0];
 
@@ -178,7 +170,7 @@ bildInput.onchange=e=>{
   r.readAsDataURL(file);
 };
 
-/* KLICK PÅ KARTA */
+/* KLICK */
 karta.onclick=e=>{
   if(mode!=="edit")return;
 
@@ -190,13 +182,16 @@ karta.onclick=e=>{
   p.className="plats";
   p.style.left=tempX+"px";
   p.style.top=tempY+"px";
+
   karta.appendChild(p);
+
+  aktuellPunktIndex=null; /* ny punkt */
 
   editor.style.display="block";
 };
 
-/* ✅ SPARA PUNKT */
-function spara(){
+/* ✅ SPARA NY PUNKT */
+function sparaPunkt(){
 
   if(!referensBild){
     alert("Välj bild först");
@@ -217,22 +212,24 @@ function spara(){
 
   bana.push(obj);
 
+  aktuellPunktIndex=bana.length-1;
+
   antal.innerText="Kontroller: "+bana.length;
 
   resetEditor();
 }
 
-/* ✅ LÄGG TILL FLER FRÅGOR */
+/* ✅ LÄGG TILL FRÅGA PÅ SAMMA PUNKT */
 function laggTillFraga(){
 
-  if(bana.length===0){
-    alert("Skapa punkt först");
+  if(aktuellPunktIndex === null){
+    alert("Skapa punkt först!");
     return;
   }
 
-  let sista=bana[bana.length-1];
+  let punkt=bana[aktuellPunktIndex];
 
-  sista.fragaLista.push({
+  punkt.fragaLista.push({
     fraga:fragaInput.value,
     svar:svarInput.value
   });
@@ -246,9 +243,9 @@ function laggTillFraga(){
 /* RESET */
 function resetEditor(){
   editor.style.display="none";
+  preview.style.display="none";
   fragaInput.value="";
   svarInput.value="";
-  preview.style.display="none";
   referensBild=null;
 }
 
@@ -275,10 +272,10 @@ function startScan(){
   });
 }
 
-/* SCAN LOOP */
+/* SCAN */
 function liveScan(){
 
-  if(!scanning) return;
+  if(!scanning)return;
 
   let c=document.createElement("canvas");
   let ctx=c.getContext("2d");
@@ -333,7 +330,7 @@ function liveScan(){
   };
 }
 
-/* ✅ VISA FRÅGA */
+/* VISA FRÅGA */
 function visaFraga(){
 
   scan.style.display="none";
@@ -343,7 +340,7 @@ function visaFraga(){
   fragaText.innerText=f.fraga;
 }
 
-/* ✅ SVAR */
+/* SVAR */
 function kollaSvar(){
 
   let f=aktuellKontroll.fragaLista[aktuellFragaIndex];
